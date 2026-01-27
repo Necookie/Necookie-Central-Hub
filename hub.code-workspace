@@ -1,0 +1,6 @@
+{
+  "folders": [
+    { "name": "HUB-UI (Client)", "path": "client" },
+    { "name": "HUB-API (Server)", "path": "server" }
+  ]
+}
