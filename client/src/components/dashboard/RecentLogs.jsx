@@ -1,35 +1,111 @@
-import React from 'react';
-import { Hash } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { supabase } from '../../supabaseClient';
+import { Clock, Terminal, Activity } from 'lucide-react';
 
-const LogItem = ({ time, activity, tag }) => (
-  <div className="flex gap-4 items-start group">
-    <div className="min-w-[40px] text-right">
-      <span className="text-[10px] font-mono text-slate-400 group-hover:text-sky-600 transition-colors">{time}</span>
-    </div>
-    <div className="relative pb-4 border-l border-slate-200 pl-4 last:border-0 last:pb-0">
-      <div className="absolute -left-[5px] top-1.5 w-2.5 h-2.5 rounded-full bg-white border-2 border-slate-300 group-hover:border-sky-500 group-hover:bg-sky-500 transition-colors" />
-      <p className="text-xs text-slate-700 font-medium leading-tight mb-1">{activity}</p>
-      <span className="text-[9px] uppercase tracking-wider text-slate-500 border border-slate-200 bg-slate-50 px-1.5 py-0.5 rounded">{tag}</span>
-    </div>
-  </div>
-);
+const RecentLogs = () => {
+  const [logs, setLogs] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-const RecentLogs = () => (
-  <div className="bg-white border border-slate-200/60 rounded-3xl p-0 flex flex-col overflow-hidden h-[400px] shadow-[0_2px_20px_rgba(0,0,0,0.04)]">
-    <div className="p-5 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
-      <h3 className="text-slate-400 text-xs font-bold uppercase tracking-widest flex items-center gap-2">
-        <Hash size={14} className="text-emerald-500" />
-        Recent Logs
-      </h3>
-      <span className="text-[10px] font-mono text-slate-400 bg-white border border-slate-200 px-2 py-0.5 rounded">LIVE FEED</span>
+  // 1. Fetch initial data
+  const fetchLogs = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('minute_logs')
+        .select('*')
+        .eq('is_private', false) // Only show Public logs here!
+        .order('start_time', { ascending: false })
+        .limit(20);
+
+      if (error) throw error;
+      setLogs(data);
+    } catch (error) {
+      console.error('Error fetching logs:', error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchLogs();
+
+    // 2. Setup Real-time Listener (The "Magic" part)
+    const channel = supabase
+      .channel('public:minute_logs')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'minute_logs' },
+        (payload) => {
+          // If a new public log comes in, add it to the top of the list
+          if (!payload.new.is_private) {
+            setLogs((prevLogs) => [payload.new, ...prevLogs]);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  // Helper to format time (e.g. "10:42 AM")
+  const formatTime = (timestamp) => {
+    return new Date(timestamp).toLocaleTimeString([], { 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    });
+  };
+
+  return (
+    <div className="bg-slate-900 text-slate-300 rounded-3xl p-6 shadow-2xl shadow-slate-900/20 h-full flex flex-col font-mono relative overflow-hidden">
+      {/* Decorative Terminal Header */}
+      <div className="flex justify-between items-center mb-6 border-b border-slate-700/50 pb-4">
+        <div className="flex gap-2">
+          <div className="w-3 h-3 rounded-full bg-red-500/80" />
+          <div className="w-3 h-3 rounded-full bg-amber-500/80" />
+          <div className="w-3 h-3 rounded-full bg-emerald-500/80" />
+        </div>
+        <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold flex items-center gap-2">
+          <Terminal size={12} />
+          System_Log.sh
+        </p>
+      </div>
+
+      {/* The Feed */}
+      <div className="flex-1 overflow-y-auto custom-scrollbar space-y-4 pr-2">
+        {loading ? (
+          <p className="text-xs text-slate-500 animate-pulse">{'>'}{'>'} Fetching data stream...</p>
+        ) : logs.length === 0 ? (
+          <p className="text-xs text-slate-600 italic">{'>'}{'>'} No activity recorded today.</p>
+        ) : (
+          logs.map((log) => (
+            <div key={log.id} className="group flex gap-4 items-start opacity-80 hover:opacity-100 transition-opacity">
+              <span className="text-xs text-slate-500 pt-1 min-w-[60px] text-right">
+                {formatTime(log.start_time)}
+              </span>
+              <div className="relative flex-1 pb-4 border-l border-slate-700/50 pl-4">
+                {/* Timeline Dot */}
+                <div className="absolute -left-[5px] top-1.5 w-2.5 h-2.5 rounded-full bg-slate-800 border border-emerald-500/50 group-hover:bg-emerald-500 transition-colors shadow-[0_0_10px_rgba(16,185,129,0.2)]" />
+                
+                <p className="text-sm text-slate-200 leading-relaxed">
+                  {log.activity}
+                </p>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Footer Status */}
+      <div className="mt-4 pt-4 border-t border-slate-700/50 flex justify-between items-center text-[10px] text-slate-500">
+        <span>USER: dheyn_admin</span>
+        <span className="flex items-center gap-1.5">
+          <Activity size={10} className="text-emerald-500" />
+          SYNC_ACTIVE
+        </span>
+      </div>
     </div>
-    <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
-      <LogItem time="09:30" activity="Starting React Light Mode" tag="Dev" />
-      <LogItem time="08:15" activity="Breakfast: Pandesal & Coffee" tag="Meals" />
-      <LogItem time="07:00" activity="Woke up" tag="Sleep" />
-      <LogItem time="00:30" activity="Late night debugging" tag="Dev" />
-    </div>
-  </div>
-);
+  );
+};
 
 export default RecentLogs;

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Zap, Clock, Lock, BookOpen, LayoutGrid, Search, Bell, Menu } from 'lucide-react';
+import { Zap, Clock, Lock, BookOpen, LayoutGrid, Menu } from 'lucide-react';
 
 const MainLayout = ({ children }) => {
   const location = useLocation();
@@ -39,31 +39,17 @@ const MainLayout = ({ children }) => {
 
         {/* Content Area */}
         <main className="flex-1 flex flex-col h-full overflow-hidden">
-          {/* Header */}
-          <header className="h-16 border-b border-slate-200/60 bg-white/50 backdrop-blur-md flex items-center justify-between px-6 z-40">
-            <div className="flex items-center gap-4 text-slate-500">
-              <Menu className="md:hidden text-slate-600" />
-              <div className="hidden md:flex items-center gap-2 bg-white border border-slate-200 px-3 py-1.5 rounded-full w-64 focus-within:border-sky-500 focus-within:ring-2 focus-within:ring-sky-100 transition-all shadow-sm">
-                <Search size={14} className="text-slate-400" />
-                <input type="text" placeholder="Search logs..." className="bg-transparent border-none outline-none text-xs w-full text-slate-700 placeholder:text-slate-400 font-mono" />
-              </div>
-            </div>
-            <div className="flex items-center gap-6">
-              <div className="hidden md:block text-right">
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">System Status</p>
-                <div className="flex items-center justify-end gap-1.5">
-                  <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
-                  <span className="text-xs font-bold text-emerald-600 font-mono">ONLINE</span>
-                </div>
-              </div>
-              <button className="relative p-2 hover:bg-slate-100 rounded-full transition-colors">
-                <Bell size={18} className="text-slate-500" />
-              </button>
-            </div>
-          </header>
+          
+          {/* DELETED THE HEADER BLOCK FROM HERE */}
+          
+          {/* Mobile Menu Trigger (Optional - keeps layout safe on mobile) */}
+          <div className="md:hidden p-4 flex justify-between items-center bg-white/50 border-b border-slate-200">
+             <Menu className="text-slate-600" />
+             <span className="font-bold text-slate-500">Necookie Hub</span>
+          </div>
 
           <div className="flex-1 overflow-y-auto p-4 md:p-8 scroll-smooth custom-scrollbar">
-            <div className="max-w-7xl mx-auto">
+            <div className="max-w-7xl mx-auto h-full flex flex-col">
               {children}
             </div>
           </div>
@@ -73,7 +59,7 @@ const MainLayout = ({ children }) => {
   );
 };
 
-// Updated NavIcon to support Links
+// NavIcon Helper
 const NavIcon = ({ to, icon, active, danger }) => (
   <Link to={to} className={`relative group p-3 rounded-2xl transition-all duration-300 ${
     active ? 'bg-sky-50 text-sky-600' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-100'
