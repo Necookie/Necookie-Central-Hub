@@ -7,8 +7,8 @@ import { Zap } from 'lucide-react';
 // Pages
 import Dashboard from './pages/Dashboard';
 import Login from './pages/Login';
-import History from './pages/History';
-import Diary from './pages/Diary';
+import History from './pages/History'; // Newly added
+import Diary from './pages/Diary';     // Newly added
 import Vault from './pages/Vault';
 
 function App() {
