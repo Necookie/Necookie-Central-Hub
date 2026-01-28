@@ -1,25 +1,43 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../../supabaseClient';
-import { Clock, Terminal, Activity } from 'lucide-react';
+import { Terminal, Activity, CheckCircle2, Utensils, Zap } from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
 
 const RecentLogs = () => {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // 1. Fetch initial data
   const fetchLogs = async () => {
     try {
-      const { data, error } = await supabase
-        .from('minute_logs')
-        .select('*')
-        .eq('is_private', false) // Only show Public logs here!
-        .order('start_time', { ascending: false })
-        .limit(20);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
 
-      if (error) throw error;
-      setLogs(data);
+      const [tasks, meals, workouts] = await Promise.all([
+        supabase.from('tasks').select('*').eq('user_id', user.id).eq('is_completed', true).order('created_at', { ascending: false }).limit(5),
+        supabase.from('meals').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(5),
+        supabase.from('workouts').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(5)
+      ]);
+
+      const normalizedTasks = (tasks.data || []).map(t => ({
+        id: t.id, type: 'task', content: t.text, time: t.created_at, icon: CheckCircle2, color: 'text-slate-400'
+      }));
+      
+      // FIXED: Using 'meal_name'
+      const normalizedMeals = (meals.data || []).map(m => ({
+        id: m.id, type: 'meal', content: `Ate ${m.meal_name || 'Food'} (${m.calories}kcal)`, time: m.created_at, icon: Utensils, color: 'text-emerald-400'
+      }));
+      
+      const normalizedWorkouts = (workouts.data || []).map(w => ({
+        id: w.id, type: 'workout', content: `${w.activity_type} • ${w.distance_km || 0}km`, time: w.created_at, icon: Zap, color: 'text-orange-400'
+      }));
+
+      const allLogs = [...normalizedTasks, ...normalizedMeals, ...normalizedWorkouts]
+        .sort((a, b) => new Date(b.time) - new Date(a.time))
+        .slice(0, 10);
+
+      setLogs(allLogs);
     } catch (error) {
-      console.error('Error fetching logs:', error.message);
+      console.error('Error fetching logs:', error);
     } finally {
       setLoading(false);
     }
@@ -27,38 +45,26 @@ const RecentLogs = () => {
 
   useEffect(() => {
     fetchLogs();
-
-    // 2. Setup Real-time Listener (The "Magic" part)
-    const channel = supabase
-      .channel('public:minute_logs')
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'minute_logs' },
-        (payload) => {
-          // If a new public log comes in, add it to the top of the list
-          if (!payload.new.is_private) {
-            setLogs((prevLogs) => [payload.new, ...prevLogs]);
-          }
-        }
-      )
+    const channel = supabase.channel('dashboard_feed')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'tasks' }, (payload) => {
+        if(payload.new.is_completed) addNewLog({ id: payload.new.id, type: 'task', content: payload.new.text, time: payload.new.created_at, icon: CheckCircle2, color: 'text-slate-400' });
+      })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'meals' }, (payload) => {
+        // FIXED: Using 'meal_name' from payload
+        addNewLog({ id: payload.new.id, type: 'meal', content: `Ate ${payload.new.meal_name || 'Food'} (${payload.new.calories}kcal)`, time: payload.new.created_at, icon: Utensils, color: 'text-emerald-400' });
+      })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'workouts' }, (payload) => {
+        addNewLog({ id: payload.new.id, type: 'workout', content: `${payload.new.activity_type}`, time: payload.new.created_at, icon: Zap, color: 'text-orange-400' });
+      })
       .subscribe();
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    return () => { supabase.removeChannel(channel); };
   }, []);
 
-  // Helper to format time (e.g. "10:42 AM")
-  const formatTime = (timestamp) => {
-    return new Date(timestamp).toLocaleTimeString([], { 
-      hour: '2-digit', 
-      minute: '2-digit' 
-    });
-  };
+  const addNewLog = (item) => setLogs(prev => [item, ...prev].slice(0, 10));
 
   return (
-    <div className="bg-slate-900 text-slate-300 rounded-3xl p-6 shadow-2xl shadow-slate-900/20 h-full flex flex-col font-mono relative overflow-hidden">
-      {/* Decorative Terminal Header */}
+    <div className="bg-slate-900 text-slate-300 rounded-3xl p-6 shadow-sm border border-slate-800 h-full flex flex-col font-mono relative overflow-hidden">
       <div className="flex justify-between items-center mb-6 border-b border-slate-700/50 pb-4">
         <div className="flex gap-2">
           <div className="w-3 h-3 rounded-full bg-red-500/80" />
@@ -66,43 +72,28 @@ const RecentLogs = () => {
           <div className="w-3 h-3 rounded-full bg-emerald-500/80" />
         </div>
         <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold flex items-center gap-2">
-          <Terminal size={12} />
-          System_Log.sh
+          <Terminal size={12} /> Live_Feed.sh
         </p>
       </div>
 
-      {/* The Feed */}
       <div className="flex-1 overflow-y-auto custom-scrollbar space-y-4 pr-2">
-        {loading ? (
-          <p className="text-xs text-slate-500 animate-pulse">{'>'}{'>'} Fetching data stream...</p>
-        ) : logs.length === 0 ? (
-          <p className="text-xs text-slate-600 italic">{'>'}{'>'} No activity recorded today.</p>
-        ) : (
+        {loading ? <p className="text-xs text-slate-500 animate-pulse">{'>'} Scanning streams...</p> : 
           logs.map((log) => (
-            <div key={log.id} className="group flex gap-4 items-start opacity-80 hover:opacity-100 transition-opacity">
-              <span className="text-xs text-slate-500 pt-1 min-w-[60px] text-right">
-                {formatTime(log.start_time)}
+            <div key={`${log.type}-${log.id}`} className="flex gap-4 items-start opacity-80 hover:opacity-100 transition-opacity animate-in slide-in-from-left-2 duration-300">
+              <span className="text-[10px] text-slate-600 pt-1 min-w-[50px] text-right font-sans">
+                 {formatDistanceToNow(new Date(log.time), { addSuffix: true }).replace('about ', '')}
               </span>
               <div className="relative flex-1 pb-4 border-l border-slate-700/50 pl-4">
-                {/* Timeline Dot */}
-                <div className="absolute -left-[5px] top-1.5 w-2.5 h-2.5 rounded-full bg-slate-800 border border-emerald-500/50 group-hover:bg-emerald-500 transition-colors shadow-[0_0_10px_rgba(16,185,129,0.2)]" />
-                
-                <p className="text-sm text-slate-200 leading-relaxed">
-                  {log.activity}
-                </p>
+                <div className={`absolute -left-[5px] top-1.5 w-2.5 h-2.5 rounded-full bg-slate-900 border ${log.type === 'meal' ? 'border-emerald-500' : log.type === 'workout' ? 'border-orange-500' : 'border-slate-500'}`} />
+                <div className="flex items-center gap-2">
+                  <log.icon size={12} className={log.color} />
+                  <p className="text-xs text-slate-300 font-bold">{log.type.toUpperCase()}</p>
+                </div>
+                <p className="text-xs text-slate-400 mt-0.5">{log.content}</p>
               </div>
             </div>
           ))
-        )}
-      </div>
-
-      {/* Footer Status */}
-      <div className="mt-4 pt-4 border-t border-slate-700/50 flex justify-between items-center text-[10px] text-slate-500">
-        <span>USER: dheyn_admin</span>
-        <span className="flex items-center gap-1.5">
-          <Activity size={10} className="text-emerald-500" />
-          SYNC_ACTIVE
-        </span>
+        }
       </div>
     </div>
   );

@@ -2,7 +2,7 @@ import React from 'react';
 import { ChevronRight } from 'lucide-react';
 
 const AIBlogCard = () => (
-  <div className="bg-white border border-slate-200/60 rounded-3xl p-8 relative overflow-hidden shadow-[0_2px_20px_rgba(0,0,0,0.04)] h-full">
+  <div className="bg-white border border-slate-200/60 rounded-3xl p-8 relative overflow-hidden shadow-sm h-full">
     <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-sky-50 rounded-full blur-[80px] pointer-events-none" />
     
     <div className="relative z-10">
