@@ -3,32 +3,49 @@
 @tailwind utilities;
 
 @layer base {
-  body {
-    @apply bg-slate-50 text-slate-800 antialiased;
+  /* ☀️ LIGHT MODE: Crisp, Clean, Bright */
+  :root {
+    --background: 248 250 252; /* slate-50 */
+    --surface: 255 255 255;    /* white */
+    --surface-highlight: 241 245 249; /* slate-100 */
+    
+    --text-main: 15 23 42;     /* slate-900 (Sharper text) */
+    --text-muted: 100 116 139; /* slate-500 */
+    
+    --primary: 14 165 233;     /* sky-500 */
+    --border: 226 232 240;     /* slate-200 */
+    
+    --card-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05);
+  }
+
+  /* 🌙 DARK MODE: Deep, Rich, "Premium" */
+  .dark {
+    --background: 9 9 11;      /* zinc-950 (Rich, deep grey-black) */
+    --surface: 24 24 27;       /* zinc-900 */
+    --surface-highlight: 39 39 42; /* zinc-800 */
+    
+    --text-main: 244 244 245;  /* zinc-100 */
+    --text-muted: 161 161 170; /* zinc-400 */
+    
+    --primary: 56 189 248;     /* sky-400 */
+    --border: 39 39 42;        /* zinc-800 (Subtle borders are key in dark mode) */
+    
+    --card-shadow: none;       /* Shadows don't work well in dark mode */
   }
 }
 
-/* Ceramic Scrollbar */
-.custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+@layer utilities {
+  /* Glassmorphism utility */
+  .glass {
+    @apply bg-surface/70 backdrop-blur-xl border border-border;
+  }
+  
+  /* Smooth transitions for everything */
+  .transition-theme {
+    @apply transition-colors duration-300 ease-in-out;
+  }
 }
 
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #cbd5e1; /* Slate-300 */
-  border-radius: 10px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8; /* Slate-400 */
-}
-
-/* Firefox */
-.custom-scrollbar {
-  scrollbar-width: thin;
-  scrollbar-color: #cbd5e1 transparent;
+body {
+  @apply bg-background text-text-main transition-theme selection:bg-primary/20 selection:text-primary;
 }
