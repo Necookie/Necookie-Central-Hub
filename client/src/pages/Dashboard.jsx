@@ -1,11 +1,10 @@
 import React from 'react';
 import DashboardHeader from '../components/dashboard/DashboardHeader';
-// import QuickLog from '../components/dashboard/QuickLog'; // Removed!
 import BMIWidget from '../components/dashboard/BMIWidget';
 import SleepTracker from '../components/dashboard/SleepTracker';
 import RecentLogs from '../components/dashboard/RecentLogs';
 import AIBlogCard from '../components/dashboard/AIBlogCard';
-import TaskWidget from '../components/dashboard/TaskWidget';
+import ActivityTimer from '../components/dashboard/ActivityTimer'; // <--- NEW WIDGET
 import MealTracker from '../components/dashboard/MealTracker';
 import WorkoutCard from '../components/dashboard/WorkoutCard';
 import AllowanceCard from '../components/dashboard/AllowanceCard';
@@ -13,14 +12,14 @@ import AllowanceCard from '../components/dashboard/AllowanceCard';
 const Dashboard = () => {
   return (
     <div className="flex flex-col h-full bg-slate-50/50">
-      {/* 1. THE HEADER (Now contains the Smart Input) */}
+      {/* 1. THE HEADER (Smart Input for quick logs) */}
       <DashboardHeader />
 
       {/* 2. THE MAIN CONTENT GRID */}
       <div className="grid grid-cols-1 md:grid-cols-12 gap-6 pb-12 px-2 md:px-0 max-w-7xl mx-auto w-full">
         
         {/* --- ROW 1: INTELLIGENCE & HEALTH --- */}
-        {/* AI Insight (Takes the spot of old QuickLog) */}
+        {/* AI Insight */}
         <div className="col-span-1 md:col-span-8 h-full min-h-[300px]">
           <AIBlogCard />
         </div>
@@ -38,9 +37,9 @@ const Dashboard = () => {
           <AllowanceCard />
         </div>
 
-        {/* Task Manager */}
+        {/* CENTER: THE LIFE TRACKER (Replaces static tasks) */}
         <div className="col-span-1 md:col-span-4 h-full">
-          <TaskWidget />
+          <ActivityTimer />
         </div>
 
         {/* Live Feed */}
