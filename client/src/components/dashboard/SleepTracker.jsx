@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Moon, Sun, BarChart2, ArrowLeft } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '../../api';
+import { api } from '../../api'; // <--- CONNECTED
 import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { format, subDays, isSameDay, parseISO } from 'date-fns';
 
@@ -10,13 +10,11 @@ const SleepTracker = () => {
   const [view, setView] = useState('tracker');
   const [elapsed, setElapsed] = useState("0h 0m");
 
-  // 1. Fetch Data
   const { data: sleepHistory = [] } = useQuery({ queryKey: ['sleepHistory'], queryFn: api.fetchSleepLogs });
   const { data: activeSleep } = useQuery({ queryKey: ['activeSleep'], queryFn: api.fetchActiveSleep });
 
   const isSleeping = !!activeSleep;
 
-  // 2. Mutations
   const startMutation = useMutation({
     mutationFn: api.startSleep,
     onSuccess: () => queryClient.invalidateQueries(['activeSleep'])
@@ -27,11 +25,11 @@ const SleepTracker = () => {
     onSuccess: () => {
       queryClient.invalidateQueries(['activeSleep']);
       queryClient.invalidateQueries(['sleepHistory']);
-      queryClient.invalidateQueries(['history']); // Update unified timeline
+      queryClient.invalidateQueries(['history']);
+      api.generateDailySummary();
     }
   });
 
-  // 3. Local Timer
   useEffect(() => {
     const updateTimer = () => {
       if (activeSleep) {
@@ -40,40 +38,29 @@ const SleepTracker = () => {
         setElapsed(`${Math.floor(diffMins/60)}h ${diffMins%60}m`);
       }
     };
-    updateTimer(); // Init
+    updateTimer();
     const interval = setInterval(updateTimer, 60000);
     return () => clearInterval(interval);
   }, [activeSleep]);
 
-  // 4. Chart Data Prep
   const last7Days = Array.from({ length: 7 }).map((_, i) => {
     const d = subDays(new Date(), 6 - i);
     const dayLog = sleepHistory.find(l => l.wake_time && isSameDay(parseISO(l.bed_time), d));
-    return {
-      dayName: format(d, 'EEE'),
-      hours: dayLog ? parseFloat((dayLog.duration_minutes / 60).toFixed(1)) : 0
-    };
+    return { dayName: format(d, 'EEE'), hours: dayLog ? parseFloat((dayLog.duration_minutes / 60).toFixed(1)) : 0 };
   });
 
-  // Stats
-  const lastSleep = sleepHistory[sleepHistory.length - 1]; // Assuming sorted by time ascending in API
+  const lastSleep = sleepHistory[sleepHistory.length - 1];
   const totalHours = last7Days.reduce((acc, curr) => acc + curr.hours, 0);
   const avgSleep = (totalHours / 7).toFixed(1);
 
   return (
     <div className={`relative h-full border rounded-3xl p-6 transition-all duration-500 overflow-hidden flex flex-col justify-between ${isSleeping ? 'bg-indigo-900 border-indigo-800' : 'bg-white border-slate-200/60 shadow-sm'}`}>
-      
       <div className="flex justify-between items-start z-10 relative">
         <div>
           {view === 'tracker' ? (
              <>
                <p className={`text-xs font-bold uppercase tracking-widest mb-1 ${isSleeping ? 'text-indigo-300' : 'text-slate-400'}`}>{isSleeping ? 'Currently Sleeping' : "Last Night's Sleep"}</p>
-               {isSleeping ? <h2 className="text-4xl font-mono text-white tracking-tighter mt-1">{elapsed}</h2> : 
-                 <h2 className="text-3xl font-light text-slate-800 tracking-tight flex items-baseline gap-2">
-                   {Math.floor((lastSleep?.duration_minutes || 0) / 60)}<span className="text-sm font-bold text-slate-400">h</span>
-                   {(lastSleep?.duration_minutes || 0) % 60}<span className="text-sm font-bold text-slate-400">m</span>
-                 </h2>
-               }
+               {isSleeping ? <h2 className="text-4xl font-mono text-white tracking-tighter mt-1">{elapsed}</h2> : <h2 className="text-3xl font-light text-slate-800 tracking-tight flex items-baseline gap-2">{Math.floor((lastSleep?.duration_minutes || 0) / 60)}<span className="text-sm font-bold text-slate-400">h</span>{(lastSleep?.duration_minutes || 0) % 60}<span className="text-sm font-bold text-slate-400">m</span></h2>}
              </>
           ) : (
              <>
@@ -83,12 +70,9 @@ const SleepTracker = () => {
           )}
         </div>
         {!isSleeping && (
-          <button onClick={() => setView(view === 'tracker' ? 'trends' : 'tracker')} className="p-2 bg-slate-100 text-slate-500 rounded-xl hover:bg-slate-200 transition-colors">
-            {view === 'tracker' ? <BarChart2 size={18} /> : <ArrowLeft size={18} />}
-          </button>
+          <button onClick={() => setView(view === 'tracker' ? 'trends' : 'tracker')} className="p-2 bg-slate-100 text-slate-500 rounded-xl hover:bg-slate-200 transition-colors">{view === 'tracker' ? <BarChart2 size={18} /> : <ArrowLeft size={18} />}</button>
         )}
       </div>
-
       <div className="flex-1 mt-4 relative z-10">
         {view === 'tracker' && (
           isSleeping ? (
@@ -100,15 +84,12 @@ const SleepTracker = () => {
             <div className="flex flex-col h-full justify-end">
               <div className="mb-4">
                  <div className="flex justify-between text-[10px] text-slate-400 mb-1"><span>Sleep Goal</span><span>8h</span></div>
-                 <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                   <div className="h-full bg-indigo-500 rounded-full transition-all duration-1000" style={{ width: `${Math.min(((lastSleep?.duration_minutes || 0) / 480) * 100, 100)}%` }} />
-                 </div>
+                 <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden"><div className="h-full bg-indigo-500 rounded-full transition-all duration-1000" style={{ width: `${Math.min(((lastSleep?.duration_minutes || 0) / 480) * 100, 100)}%` }} /></div>
               </div>
               <button onClick={() => startMutation.mutate()} className="w-full bg-indigo-600 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-indigo-700 shadow-lg shadow-indigo-200"><Moon size={18} /> Good Night</button>
             </div>
           )
         )}
-
         {view === 'trends' && (
           <div className="h-40 w-full mt-2">
             <ResponsiveContainer width="100%" height="100%">

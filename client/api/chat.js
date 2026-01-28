@@ -1,17 +1,42 @@
-export default async function handler(req, res) {
+export const config = {
+  runtime: 'edge', // USES VERCEL EDGE RUNTIME (FASTER)
+};
+
+export default async function handler(req) {
+  // 1. Handle CORS Preflight (Required because Frontend & Backend might be on different ports/domains)
+  if (req.method === 'OPTIONS') {
+    return new Response(null, {
+      status: 200,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      },
+    });
+  }
+
+  // 2. Block Non-POST Requests
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+    return new Response(JSON.stringify({ error: 'Method Not Allowed' }), {
+      status: 405,
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
 
   try {
-    const { messages } = req.body;
+    // 3. Parse Incoming Data (Edge Runtime uses .json())
+    const { messages } = await req.json();
 
-    // 1. Check if the key exists in Vercel
+    // 4. Verify API Key (Set this in Vercel > Settings > Environment Variables)
     if (!process.env.OPENAI_API_KEY) {
-      return res.status(500).json({ error: { message: "OpenAI API Key is missing in Vercel Settings" } });
+      return new Response(JSON.stringify({ error: "OpenAI API Key is missing in Vercel Settings" }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      });
     }
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    // 5. Forward Request to OpenAI
+    const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -19,23 +44,41 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         model: "gpt-3.5-turbo",
-        messages: messages
+        messages: messages,
+        temperature: 0.7 // Controls creativity (0.7 is a good balance)
       })
     });
 
-    const data = await response.json();
+    const data = await openaiResponse.json();
 
-    // 2. FORWARD OPENAI ERRORS
-    // If OpenAI returns 401 (Invalid Key) or 429 (Rate Limit), we forward that status
-    if (!response.ok) {
-      return res.status(response.status).json(data); 
+    // 6. Handle OpenAI Errors
+    if (!openaiResponse.ok) {
+      return new Response(JSON.stringify(data), { 
+        status: openaiResponse.status,
+        headers: { 
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*' 
+        }
+      });
     }
-    
-    // 3. Success
-    return res.status(200).json(data);
+
+    // 7. Return Success
+    return new Response(JSON.stringify(data), {
+      status: 200,
+      headers: { 
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*' 
+      }
+    });
 
   } catch (error) {
-    console.error("Backend Error:", error);
-    return res.status(500).json({ error: { message: "Internal Server Error" } });
+    console.error("Vercel Function Error:", error);
+    return new Response(JSON.stringify({ error: "Internal Server Error", details: error.message }), {
+      status: 500,
+      headers: { 
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*' 
+      }
+    });
   }
 }

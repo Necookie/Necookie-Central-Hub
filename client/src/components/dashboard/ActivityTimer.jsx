@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Play, Square, Clock, Save, Hash, Timer } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '../../api';
+import { api } from '../../api'; // <--- CONNECTED
 
 const ActivityTimer = () => {
   const queryClient = useQueryClient();
@@ -12,8 +12,7 @@ const ActivityTimer = () => {
 
   const { data: session } = useQuery({
     queryKey: ['activeSession'],
-    queryFn: api.fetchActiveSession,
-    refetchInterval: 5000 // Sync with server every 5s just in case
+    queryFn: api.fetchActiveSession
   });
 
   const startMutation = useMutation({
@@ -29,13 +28,13 @@ const ActivityTimer = () => {
     onSuccess: () => {
         queryClient.invalidateQueries(['activeSession']);
         queryClient.invalidateQueries(['history']);
+        api.generateDailySummary(); // Trigger AI on stop
         setIsStopping(false);
         setComment("");
         setElapsed("00:00:00");
     }
   });
 
-  // Local Timer Logic (Visual Only)
   useEffect(() => {
     let interval;
     if (session?.start_time) {
@@ -55,9 +54,6 @@ const ActivityTimer = () => {
     }
     return () => clearInterval(interval);
   }, [session]);
-
-  const handleStart = () => { if(activityName.trim()) startMutation.mutate(activityName); };
-  const handleStop = () => { stopMutation.mutate({ id: session.id, start_time: session.start_time, comments: comment }); };
 
   return (
     <div className="bg-white border border-slate-200/60 rounded-3xl p-6 shadow-sm h-full flex flex-col justify-between relative overflow-hidden">
@@ -82,7 +78,7 @@ const ActivityTimer = () => {
                 <input type="text" autoFocus value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Result? (e.g. '5x Win Streak')" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm mb-3 focus:outline-none focus:border-sky-500 text-center placeholder:text-slate-400"/>
                 <div className="flex gap-2">
                     <button onClick={() => setIsStopping(false)} className="flex-1 bg-slate-100 text-slate-500 font-bold py-3 rounded-xl hover:bg-slate-200 transition-all text-xs">Cancel</button>
-                    <button onClick={handleStop} className="flex-[2] bg-slate-900 text-white font-bold py-3 rounded-xl hover:bg-slate-800 transition-all flex items-center justify-center gap-2 text-xs"><Save size={14} /> Finish</button>
+                    <button onClick={() => stopMutation.mutate({ id: session.id, start_time: session.start_time, comments: comment })} className="flex-[2] bg-slate-900 text-white font-bold py-3 rounded-xl hover:bg-slate-800 transition-all flex items-center justify-center gap-2 text-xs"><Save size={14} /> Finish</button>
                 </div>
               </div>
             ) : (
@@ -99,9 +95,9 @@ const ActivityTimer = () => {
             </div>
             <div className="relative">
               <Hash className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-              <input type="text" value={activityName} onChange={(e) => setActivityName(e.target.value)} placeholder="What are you doing?" className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-12 pr-4 py-4 text-sm focus:outline-none focus:border-sky-500 transition-colors" onKeyDown={(e) => e.key === 'Enter' && handleStart()}/>
+              <input type="text" value={activityName} onChange={(e) => setActivityName(e.target.value)} placeholder="What are you doing?" className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-12 pr-4 py-4 text-sm focus:outline-none focus:border-sky-500 transition-colors" onKeyDown={(e) => e.key === 'Enter' && activityName.trim() && startMutation.mutate(activityName)}/>
             </div>
-            <button onClick={handleStart} disabled={!activityName.trim()} className="w-full bg-sky-500 text-white font-bold py-4 rounded-xl hover:bg-sky-600 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-sky-200"><Play size={18} fill="currentColor" /> Start Timing</button>
+            <button onClick={() => activityName.trim() && startMutation.mutate(activityName)} disabled={!activityName.trim()} className="w-full bg-sky-500 text-white font-bold py-4 rounded-xl hover:bg-sky-600 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-sky-200"><Play size={18} fill="currentColor" /> Start Timing</button>
           </div>
         )}
       </div>

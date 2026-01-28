@@ -1,20 +1,24 @@
 import React, { useState } from 'react';
 import { Utensils, Flame, Plus, X } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '../../api';
+import { api } from '../../api'; // <--- CONNECTED
 
 const MealTracker = () => {
   const queryClient = useQueryClient();
   const [isAdding, setIsAdding] = useState(false);
   const [newMeal, setNewMeal] = useState({ meal_name: '', calories: '' });
 
-  const { data: meals = [] } = useQuery({ queryKey: ['meals'], queryFn: api.fetchMeals });
+  const { data: meals = [] } = useQuery({ 
+    queryKey: ['meals'], 
+    queryFn: api.fetchMeals 
+  });
 
   const addMutation = useMutation({
     mutationFn: api.addMeal,
     onSuccess: () => {
       queryClient.invalidateQueries(['meals']);
       queryClient.invalidateQueries(['history']);
+      api.generateDailySummary(); // Trigger AI
       setIsAdding(false);
       setNewMeal({ meal_name: '', calories: '' });
     }

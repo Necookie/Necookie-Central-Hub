@@ -6,30 +6,125 @@ const getUser = async () => {
   return user;
 };
 
+const getLocalYYYYMMDD = () => {
+  const date = new Date();
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 export const api = {
-  // --- UNIFIED HISTORY ---
-  fetchUnifiedHistory: async (limit = 50) => {
-    const { data, error } = await supabase
-      .from('unified_history')
+  // --- AI INTELLIGENCE ---
+  
+  fetchLatestSummary: async () => {
+    const user = await getUser();
+    const today = getLocalYYYYMMDD(); 
+    
+    const { data } = await supabase
+      .from('daily_summaries')
       .select('*')
-      .order('timestamp', { ascending: false })
-      .limit(limit);
-    if (error) throw error;
+      .eq('user_id', user.id)
+      .eq('date', today) 
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+      
     return data;
   },
 
-  // --- MEALS ---
-  fetchMeals: async () => {
+  generateDailySummary: async () => {
+    console.log("🧠 GATHERING DATA FOR AI...");
     const user = await getUser();
-    const today = new Date();
-    today.setHours(0,0,0,0);
-    const { data, error } = await supabase
-      .from('meals')
+    
+    // 1. Fetch History (Midnight Local to Now)
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0); 
+    
+    const { data: history } = await supabase
+      .from('unified_history') // This now includes JOURNAL due to the SQL update
       .select('*')
       .eq('user_id', user.id)
-      .gte('created_at', today.toISOString())
-      .order('created_at', { ascending: false });
-    if (error) throw error;
+      .gte('timestamp', startOfDay.toISOString())
+      .order('timestamp', { ascending: true });
+
+    if (!history || history.length === 0) {
+        console.warn("⚠️ No history found today.");
+        return;
+    }
+
+    // 2. Format Data Structure for AI
+    const activityLog = history.map(h => 
+      `- [${new Date(h.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}] ${h.type.toUpperCase()}: ${h.content} ${h.secondary_info ? `(${h.secondary_info})` : ''}`
+    ).join('\n');
+
+    console.log("📝 SENDING CONTEXT TO AI:\n", activityLog);
+
+    // 3. THE "EVERYTHING" PROMPT
+    const prompt = `
+      You are Dheyn's personal AI life narrator.
+      
+      Here is his ENTIRE activity log for today (from 12:00 AM to now):
+      ${activityLog}
+      
+      INSTRUCTIONS:
+      1. **Analyze his Mood:** Look specifically for "JOURNAL" entries. How is he feeling? Reflect this in your tone.
+      2. **Judge his Diet:** Look at "MEAL" entries. Is he eating healthy or trash? Roast him gently if it's junk.
+      3. **Track Productivity:** Look at "TASK" and "SESSION" (Coding/Gaming).
+      4. **Synthesis:** Combine all these into a short, witty, "Blog-Style" daily recap (max 3-4 sentences). 
+      
+      TONE: Gen-Z, unfiltered, supportive but real. Use emojis.
+    `;
+
+    try {
+      // 4. Call OpenAI (Direct Proxy)
+      const response = await fetch('/api/openai/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: "gpt-3.5-turbo",
+          messages: [{ role: "user", content: prompt }],
+          temperature: 0.7
+        })
+      });
+
+      if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(`AI Request Failed: ${errText}`);
+      }
+      
+      const aiData = await response.json();
+      const summaryText = aiData.choices[0].message.content;
+
+      console.log("✅ AI WROTE:", summaryText);
+
+      // 5. Save Summary
+      await supabase.from('daily_summaries').insert([
+        { 
+          user_id: user.id, 
+          content: summaryText, 
+          date: getLocalYYYYMMDD()
+        }
+      ]);
+      
+      return summaryText;
+
+    } catch (error) {
+      console.error("❌ AI Generation Error:", error);
+      return null;
+    }
+  },
+
+  // --- STANDARD FETCHES (No changes needed below here, but keeping for completeness) ---
+  fetchUnifiedHistory: async (limit = 50) => {
+    const { data } = await supabase.from('unified_history').select('*').order('timestamp', { ascending: false }).limit(limit);
+    return data;
+  },
+  
+  fetchMeals: async () => {
+    const user = await getUser();
+    const today = new Date(); today.setHours(0,0,0,0);
+    const { data } = await supabase.from('meals').select('*').eq('user_id', user.id).gte('created_at', today.toISOString()).order('created_at', { ascending: false });
     return data;
   },
   
@@ -38,16 +133,9 @@ export const api = {
     return supabase.from('meals').insert([{ user_id: user.id, meal_name, calories }]);
   },
 
-  // --- TASKS ---
   fetchTasks: async () => {
     const user = await getUser();
-    const { data, error } = await supabase
-      .from('tasks')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('completed', { ascending: true })
-      .order('created_at', { ascending: false });
-    if (error) throw error;
+    const { data } = await supabase.from('tasks').select('*').eq('user_id', user.id).order('completed', { ascending: true }).order('created_at', { ascending: false });
     return data;
   },
 
@@ -64,23 +152,14 @@ export const api = {
     return supabase.from('tasks').delete().eq('id', id);
   },
 
-  // --- EXERCISE ---
   logWorkout: async ({ type, distance_km, duration_mins }) => {
     const user = await getUser();
-    return supabase.from('exercise').insert([{ 
-      user_id: user.id, type, distance_km, duration_mins, calories_burned: duration_mins * 8 
-    }]);
+    return supabase.from('exercise').insert([{ user_id: user.id, type, distance_km, duration_mins, calories_burned: duration_mins * 8 }]);
   },
 
-  // --- SESSIONS (TIMER) ---
   fetchActiveSession: async () => {
     const user = await getUser();
-    const { data } = await supabase
-      .from('activity_sessions')
-      .select('*')
-      .eq('user_id', user.id)
-      .is('end_time', null)
-      .maybeSingle();
+    const { data } = await supabase.from('activity_sessions').select('*').eq('user_id', user.id).is('end_time', null).maybeSingle();
     return data;
   },
 
@@ -93,37 +172,19 @@ export const api = {
     const endTime = new Date();
     const startTime = new Date(start_time);
     const durationSecs = Math.floor((endTime - startTime) / 1000);
-    return supabase.from('activity_sessions').update({ 
-      end_time: endTime.toISOString(), duration_seconds: durationSecs, comments 
-    }).eq('id', id);
+    return supabase.from('activity_sessions').update({ end_time: endTime.toISOString(), duration_seconds: durationSecs, comments }).eq('id', id);
   },
 
-  // --- SLEEP ---
   fetchSleepLogs: async () => {
     const user = await getUser();
-    // Get last 7 days of sleep
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    
-    const { data, error } = await supabase
-      .from('sleep_logs')
-      .select('*')
-      .eq('user_id', user.id)
-      .gte('bed_time', sevenDaysAgo.toISOString())
-      .order('bed_time', { ascending: true });
-    
-    if(error) throw error;
+    const sevenDaysAgo = new Date(); sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const { data } = await supabase.from('sleep_logs').select('*').eq('user_id', user.id).gte('bed_time', sevenDaysAgo.toISOString()).order('bed_time', { ascending: true });
     return data;
   },
 
   fetchActiveSleep: async () => {
     const user = await getUser();
-    const { data } = await supabase
-      .from('sleep_logs')
-      .select('*')
-      .eq('user_id', user.id)
-      .is('wake_time', null)
-      .maybeSingle();
+    const { data } = await supabase.from('sleep_logs').select('*').eq('user_id', user.id).is('wake_time', null).maybeSingle();
     return data;
   },
 
@@ -136,23 +197,13 @@ export const api = {
     const wakeTime = new Date();
     const start = new Date(bed_time);
     let durationMins = Math.floor((wakeTime - start) / 60000);
-    // Deduct 15 mins for latency if sleep > 20 mins
     if (durationMins > 20) durationMins -= 15; 
-
-    return supabase.from('sleep_logs').update({ 
-      wake_time: wakeTime.toISOString(), duration_minutes: durationMins 
-    }).eq('id', id);
+    return supabase.from('sleep_logs').update({ wake_time: wakeTime.toISOString(), duration_minutes: durationMins }).eq('id', id);
   },
 
-  // --- DIARY ---
   fetchJournal: async () => {
     const user = await getUser();
-    const { data, error } = await supabase
-      .from('journal_entries')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false });
-    if(error) throw error;
+    const { data } = await supabase.from('journal_entries').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
     return data;
   },
 
@@ -165,15 +216,9 @@ export const api = {
     return supabase.from('journal_entries').delete().eq('id', id);
   },
 
-  // --- VAULT ---
   fetchPrivateLogs: async () => {
     const user = await getUser();
-    const { data, error } = await supabase
-      .from('private_logs')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false });
-    if(error) throw error;
+    const { data } = await supabase.from('private_logs').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
     return data;
   }
 };

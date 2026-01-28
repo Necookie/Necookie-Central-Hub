@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { CheckSquare, Plus, Trash2, Loader2 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '../../api';
+import { api } from '../../api'; // <--- CONNECTED
 
 const TaskWidget = () => {
   const queryClient = useQueryClient();
@@ -9,9 +9,25 @@ const TaskWidget = () => {
 
   const { data: tasks = [], isLoading } = useQuery({ queryKey: ['tasks'], queryFn: api.fetchTasks });
 
-  const addMutation = useMutation({ mutationFn: api.addTask, onSuccess: () => { queryClient.invalidateQueries(['tasks']); queryClient.invalidateQueries(['history']); setNewTask(""); }});
-  const toggleMutation = useMutation({ mutationFn: api.toggleTask, onSuccess: () => { queryClient.invalidateQueries(['tasks']); queryClient.invalidateQueries(['history']); }});
-  const deleteMutation = useMutation({ mutationFn: api.deleteTask, onSuccess: () => { queryClient.invalidateQueries(['tasks']); queryClient.invalidateQueries(['history']); }});
+  const addMutation = useMutation({
+    mutationFn: api.addTask,
+    onSuccess: () => {
+      queryClient.invalidateQueries(['tasks']);
+      queryClient.invalidateQueries(['history']);
+      api.generateDailySummary();
+      setNewTask("");
+    }
+  });
+
+  const toggleMutation = useMutation({
+    mutationFn: api.toggleTask,
+    onSuccess: () => { queryClient.invalidateQueries(['tasks']); queryClient.invalidateQueries(['history']); }
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: api.deleteTask,
+    onSuccess: () => { queryClient.invalidateQueries(['tasks']); queryClient.invalidateQueries(['history']); }
+  });
 
   const handleAdd = (e) => { if (e.key === 'Enter' && newTask.trim()) addMutation.mutate(newTask.trim()); };
   const completedCount = tasks.filter(t => t.completed).length;

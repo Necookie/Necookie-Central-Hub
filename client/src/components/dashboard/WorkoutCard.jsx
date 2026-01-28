@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Activity, Play, Save, CheckCircle } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '../../api';
+import { api } from '../../api'; // <--- CONNECTED
 
 const WorkoutCard = () => {
   const queryClient = useQueryClient();
@@ -13,6 +13,7 @@ const WorkoutCard = () => {
     mutationFn: api.logWorkout,
     onSuccess: () => {
       queryClient.invalidateQueries(['history']);
+      api.generateDailySummary();
       setMode('success');
       setTimeout(() => { setMode('view'); setDistance(""); setDuration(""); }, 2000);
     },
