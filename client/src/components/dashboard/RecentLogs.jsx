@@ -1,123 +1,57 @@
-import React, { useEffect, useState } from 'react';
-import { supabase } from '../../supabaseClient';
-import { Terminal, Activity, CheckCircle2, Utensils, Zap } from 'lucide-react';
+import React from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { api } from '../../api';
+import { Terminal, Activity, CheckCircle2, Utensils, Zap, Clock } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
 const RecentLogs = () => {
-  const [logs, setLogs] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { data: logs = [], isLoading } = useQuery({
+    queryKey: ['history'], // Shared key with History page
+    queryFn: () => api.fetchUnifiedHistory(10),
+    refetchInterval: 5000 // Poll every 5s to keep "Live" feel
+  });
 
-  const fetchLogs = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const [tasks, meals, exercises] = await Promise.all([
-        supabase.from('tasks').select('*').eq('user_id', user.id).eq('completed', true).order('created_at', { ascending: false }).limit(5),
-        supabase.from('meals').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(5),
-        supabase.from('exercise').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(5)
-      ]);
-
-      // FIXED: Mapping 'description' from tasks
-      const normalizedTasks = (tasks.data || []).map(t => ({
-        id: t.id, type: 'task', content: t.description, time: t.created_at, icon: CheckCircle2, color: 'text-slate-400'
-      }));
-      
-      // FIXED: Mapping 'meal_name' from meals
-      const normalizedMeals = (meals.data || []).map(m => ({
-        id: m.id, type: 'meal', content: `Ate ${m.meal_name || 'Food'} (${m.calories}kcal)`, time: m.created_at, icon: Utensils, color: 'text-emerald-400'
-      }));
-      
-      const normalizedWorkouts = (exercises.data || []).map(w => ({
-        id: w.id, type: 'workout', content: `${w.type} • ${w.distance_km || 0}km`, time: w.created_at, icon: Zap, color: 'text-orange-400'
-      }));
-
-      const allLogs = [...normalizedTasks, ...normalizedMeals, ...normalizedWorkouts]
-        .sort((a, b) => new Date(b.time) - new Date(a.time))
-        .slice(0, 10);
-
-      setLogs(allLogs);
-    } catch (error) {
-      console.error('Error fetching logs:', error);
-    } finally {
-      setLoading(false);
+  const getIcon = (type) => {
+    switch(type) {
+      case 'meal': return { icon: Utensils, color: 'text-emerald-400', dot: 'border-emerald-500' };
+      case 'workout': return { icon: Zap, color: 'text-orange-400', dot: 'border-orange-500' };
+      case 'session': return { icon: Clock, color: 'text-sky-400', dot: 'border-sky-500' };
+      default: return { icon: CheckCircle2, color: 'text-slate-400', dot: 'border-slate-500' };
     }
   };
-
-  useEffect(() => {
-    fetchLogs();
-    const channel = supabase.channel('dashboard_feed')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'tasks' }, (payload) => {
-        if(payload.new.completed) {
-            addNewLog({ 
-                id: payload.new.id, type: 'task', 
-                content: payload.new.description, // Fix here
-                time: payload.new.created_at, icon: CheckCircle2, color: 'text-slate-400' 
-            });
-        }
-      })
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'meals' }, (payload) => {
-        addNewLog({ 
-            id: payload.new.id, type: 'meal', 
-            content: `Ate ${payload.new.meal_name || 'Food'} (${payload.new.calories}kcal)`, 
-            time: payload.new.created_at, icon: Utensils, color: 'text-emerald-400' 
-        });
-      })
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'exercise' }, (payload) => {
-        addNewLog({ 
-            id: payload.new.id, type: 'workout', 
-            content: `${payload.new.type}`, 
-            time: payload.new.created_at, icon: Zap, color: 'text-orange-400' 
-        });
-      })
-      .subscribe();
-
-    return () => { supabase.removeChannel(channel); };
-  }, []);
-
-  const addNewLog = (item) => setLogs(prev => [item, ...prev].slice(0, 10));
 
   return (
     <div className="bg-slate-900 text-slate-300 rounded-3xl p-6 shadow-sm border border-slate-800 h-full flex flex-col font-mono relative overflow-hidden">
       <div className="flex justify-between items-center mb-6 border-b border-slate-700/50 pb-4">
-        <div className="flex gap-2">
-          <div className="w-3 h-3 rounded-full bg-red-500/80" />
-          <div className="w-3 h-3 rounded-full bg-amber-500/80" />
-          <div className="w-3 h-3 rounded-full bg-emerald-500/80" />
-        </div>
-        <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold flex items-center gap-2">
-          <Terminal size={12} /> Live_Feed.sh
-        </p>
+        <div className="flex gap-2"><div className="w-3 h-3 rounded-full bg-red-500/80" /><div className="w-3 h-3 rounded-full bg-amber-500/80" /><div className="w-3 h-3 rounded-full bg-emerald-500/80" /></div>
+        <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold flex items-center gap-2"><Terminal size={12} /> Live_Feed.sh</p>
       </div>
-
       <div className="flex-1 overflow-y-auto custom-scrollbar space-y-4 pr-2">
-        {loading ? <p className="text-xs text-slate-500 animate-pulse">{'>'} Scanning streams...</p> : 
-          logs.map((log) => (
-            <div key={`${log.type}-${log.id}`} className="flex gap-4 items-start opacity-80 hover:opacity-100 transition-opacity animate-in slide-in-from-left-2 duration-300">
-              <span className="text-[10px] text-slate-600 pt-1 min-w-[50px] text-right font-sans">
-                 {formatDistanceToNow(new Date(log.time), { addSuffix: true }).replace('about ', '')}
-              </span>
-              <div className="relative flex-1 pb-4 border-l border-slate-700/50 pl-4">
-                <div className={`absolute -left-[5px] top-1.5 w-2.5 h-2.5 rounded-full bg-slate-900 border ${log.type === 'meal' ? 'border-emerald-500' : log.type === 'workout' ? 'border-orange-500' : 'border-slate-500'}`} />
-                <div className="flex items-center gap-2">
-                  <log.icon size={12} className={log.color} />
-                  <p className="text-xs text-slate-300 font-bold">{log.type.toUpperCase()}</p>
+        {isLoading ? <p className="text-xs text-slate-500 animate-pulse">{'>'} Scanning streams...</p> : 
+          logs.map((log) => {
+            const style = getIcon(log.type);
+            return (
+              <div key={`${log.type}-${log.id}`} className="flex gap-4 items-start opacity-80 hover:opacity-100 transition-opacity">
+                <span className="text-[10px] text-slate-600 pt-1 min-w-[50px] text-right font-sans">
+                   {formatDistanceToNow(new Date(log.timestamp), { addSuffix: true }).replace('about ', '')}
+                </span>
+                <div className="relative flex-1 pb-4 border-l border-slate-700/50 pl-4">
+                  <div className={`absolute -left-[5px] top-1.5 w-2.5 h-2.5 rounded-full bg-slate-900 border ${style.dot}`} />
+                  <div className="flex items-center gap-2">
+                    <style.icon size={12} className={style.color} />
+                    <p className="text-xs text-slate-300 font-bold">{log.type.toUpperCase()}</p>
+                  </div>
+                  <p className="text-xs text-slate-400 mt-0.5">{log.content} {log.secondary_info && <span className="text-slate-600">({log.secondary_info})</span>}</p>
                 </div>
-                <p className="text-xs text-slate-400 mt-0.5">{log.content}</p>
               </div>
-            </div>
-          ))
+            );
+          })
         }
       </div>
-      
       <div className="mt-2 pt-3 border-t border-slate-800 flex justify-between items-center text-[10px] text-slate-600">
-        <span>root@necookie_hub</span>
-        <span className="flex items-center gap-1.5 text-emerald-500 animate-pulse">
-          <Activity size={10} /> LISTENING
-        </span>
+        <span>root@necookie_hub</span><span className="flex items-center gap-1.5 text-emerald-500 animate-pulse"><Activity size={10} /> LISTENING</span>
       </div>
     </div>
   );
 };
-
 export default RecentLogs;
