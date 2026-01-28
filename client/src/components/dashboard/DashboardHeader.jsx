@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Bell, Zap, Activity, Utensils, Edit3 } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../api';
-import ThemeToggle from '../ThemeToggle'; // <--- IMPORT THIS
+import ThemeSelector from '../ThemeSelector'; // <--- THEME PICKER
 
 const DashboardHeader = () => {
   const queryClient = useQueryClient();
@@ -90,12 +90,11 @@ const DashboardHeader = () => {
   const InputIcon = () => {
     if (detectedType === 'meal') return <Utensils size={14} className="text-emerald-500" />;
     if (detectedType === 'workout') return <Activity size={14} className="text-orange-500" />;
-    return <Edit3 size={14} className="text-slate-400" />;
+    return <Edit3 size={14} className="text-text-muted" />;
   };
 
   return (
-    // UPDATED: Used 'border-border' and 'bg-surface/50' for theme support
-    <header className="h-20 border-b border-border bg-surface/50 backdrop-blur-md flex items-center justify-between px-6 z-40 sticky top-0 mb-6 transition-colors duration-300">
+    <header className="h-20 border-b border-border bg-surface/50 backdrop-blur-md flex items-center justify-between px-6 z-40 sticky top-0 mb-6 transition-theme">
       
       <div>
         <h1 className="text-xl md:text-2xl font-light text-text-main">
@@ -107,8 +106,9 @@ const DashboardHeader = () => {
       </div>
 
       <div className="flex items-center gap-6">
+        
         {/* Input Field */}
-        <div className="hidden md:flex items-center gap-2 bg-background border border-border px-3 py-2 rounded-xl w-96 focus-within:border-primary focus-within:ring-2 focus-within:ring-sky-100 dark:focus-within:ring-sky-900 transition-all shadow-sm relative">
+        <div className="hidden md:flex items-center gap-2 bg-background border border-border px-3 py-2 rounded-xl w-96 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-all shadow-sm relative">
           <div className="shrink-0 transition-colors duration-300">
              <InputIcon />
           </div>
@@ -120,6 +120,7 @@ const DashboardHeader = () => {
             placeholder="Log anything... (e.g., 'Coding', 'Ate Pizza', 'Ran 5km')" 
             className="bg-transparent border-none outline-none text-xs w-full text-text-main placeholder:text-text-muted font-sans" 
           />
+          {/* Spinner */}
           {(mealMutation.isPending || workoutMutation.isPending || taskMutation.isPending || generateAiMutation.isPending) && (
              <Zap size={14} className="animate-spin text-primary shrink-0" />
           )}
@@ -130,17 +131,24 @@ const DashboardHeader = () => {
           <p className="text-[9px] font-bold text-text-muted uppercase tracking-widest mb-0.5">System Status</p>
           <div className="flex items-center justify-end gap-3">
             <span className="px-1.5 py-0.5 rounded-md bg-amber-100 border border-amber-200 text-amber-600 text-[9px] font-bold tracking-tight">v0.1</span>
-            <div className="flex items-center gap-1.5"><span className="relative flex h-1.5 w-1.5"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span><span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span></span><span className="text-xs font-bold text-emerald-600 font-mono">ONLINE</span></div>
+            <div className="flex items-center gap-1.5">
+               <span className="relative flex h-1.5 w-1.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+                </span>
+              <span className="text-xs font-bold text-emerald-600 font-mono">ONLINE</span>
+            </div>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          {/* --- HERE IS YOUR TOGGLE BUTTON --- */}
-          <ThemeToggle />
+          
+          {/* NEW: THEME SELECTOR DROPDOWN */}
+          <ThemeSelector />
 
           <button className="relative p-2 rounded-xl bg-surface border border-border hover:bg-background transition-all shadow-sm group">
             <Bell size={20} className="text-text-muted group-hover:text-text-main" />
-            <span className="absolute top-2 right-2.5 w-2 h-2 bg-red-500 rounded-full border border-white dark:border-slate-900" />
+            <span className="absolute top-2 right-2.5 w-2 h-2 bg-red-500 rounded-full border border-surface" />
           </button>
         </div>
       </div>

@@ -3,49 +3,96 @@
 @tailwind utilities;
 
 @layer base {
-  /* ☀️ LIGHT MODE: Crisp, Clean, Bright */
+  /* ☀️ BASE LIGHT (Default) */
   :root {
-    --background: 248 250 252; /* slate-50 */
-    --surface: 255 255 255;    /* white */
-    --surface-highlight: 241 245 249; /* slate-100 */
-    
-    --text-main: 15 23 42;     /* slate-900 (Sharper text) */
-    --text-muted: 100 116 139; /* slate-500 */
-    
-    --primary: 14 165 233;     /* sky-500 */
-    --border: 226 232 240;     /* slate-200 */
-    
+    --background: 248 250 252;
+    --surface: 255 255 255;
+    --surface-highlight: 241 245 249;
+    --text-main: 15 23 42;
+    --text-muted: 100 116 139;
+    --primary: 14 165 233;     /* Sky Blue */
+    --border: 226 232 240;
     --card-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05);
   }
 
-  /* 🌙 DARK MODE: Deep, Rich, "Premium" */
+  /* ☕ COFFEE THEME (Warm Light) */
+  .theme-coffee {
+    --background: 255 247 237; /* Orange-50 */
+    --surface: 255 255 255;
+    --surface-highlight: 255 237 213;
+    --text-main: 67 20 7;      /* Espresso */
+    --text-muted: 154 52 18;   /* Rust */
+    --primary: 217 119 6;      /* Caramel */
+    --border: 253 218 165;     /* Latte Foam */
+    --card-shadow: 0 4px 6px -1px rgba(67, 20, 7, 0.05);
+  }
+
+  /* 🌙 BASE DARK (Zinc) */
   .dark {
-    --background: 9 9 11;      /* zinc-950 (Rich, deep grey-black) */
-    --surface: 24 24 27;       /* zinc-900 */
-    --surface-highlight: 39 39 42; /* zinc-800 */
-    
-    --text-main: 244 244 245;  /* zinc-100 */
-    --text-muted: 161 161 170; /* zinc-400 */
-    
-    --primary: 56 189 248;     /* sky-400 */
-    --border: 39 39 42;        /* zinc-800 (Subtle borders are key in dark mode) */
-    
-    --card-shadow: none;       /* Shadows don't work well in dark mode */
+    --background: 9 9 11;
+    --surface: 24 24 27;
+    --surface-highlight: 39 39 42;
+    --text-main: 244 244 245;
+    --text-muted: 161 161 170;
+    --primary: 56 189 248;
+    --border: 39 39 42;
+    --card-shadow: none;
+  }
+
+  /* 🌌 MIDNIGHT THEME (Deep Blue) */
+  .dark.theme-midnight {
+    --background: 2 6 23;      /* Slate-950 */
+    --surface: 15 23 42;       /* Slate-900 */
+    --surface-highlight: 30 41 59;
+    --text-main: 241 245 249;
+    --text-muted: 148 163 184;
+    --primary: 99 102 241;     /* Indigo */
+    --border: 30 41 59;
+  }
+
+  /* 🌲 FOREST THEME (Emerald) */
+  .dark.theme-forest {
+    --background: 2 44 34;     /* Deep Emerald */
+    --surface: 6 78 59;
+    --surface-highlight: 6 95 70;
+    --text-main: 236 253 245;
+    --text-muted: 110 231 183;
+    --primary: 52 211 153;     /* Mint */
+    --border: 6 95 70;
+  }
+
+  /* 🚧 ORKEN THEME (Industrial Orange/Grey) */
+  .dark.theme-orken {
+    --background: 23 23 23;    /* #171717 (Neutral Dark) */
+    --surface: 53 53 53;       /* #353535 (Orken Grey) */
+    --surface-highlight: 64 64 64;
+    --text-main: 255 255 255;  /* Pure White (High Contrast) */
+    --text-muted: 163 163 163; /* Neutral-400 */
+    --primary: 255 107 1;      /* #FF6B01 (Safety Orange) */
+    --border: 82 82 82;        /* Neutral-600 (Visible Borders) */
+  }
+
+  /* 🧛 GOTH THEME (Vampire Red/Black) */
+  .dark.theme-goth {
+    --background: 0 0 0;       /* Pure Void Black */
+    --surface: 10 5 5;         /* Subtle Warm Black */
+    --surface-highlight: 20 5 5;
+    --text-main: 226 232 240;  /* Slate-200 (Cold text) */
+    --text-muted: 113 63 63;   /* Desaturated Red-Grey */
+    --primary: 220 38 38;      /* Red-600 (Blood Crimson) */
+    --border: 69 10 10;        /* Dark Red Border */
   }
 }
 
 @layer utilities {
-  /* Glassmorphism utility */
   .glass {
     @apply bg-surface/70 backdrop-blur-xl border border-border;
   }
-  
-  /* Smooth transitions for everything */
   .transition-theme {
-    @apply transition-colors duration-300 ease-in-out;
+    @apply transition-colors duration-500 ease-out; /* Slower transition for drama */
   }
 }
 
 body {
-  @apply bg-background text-text-main transition-theme selection:bg-primary/20 selection:text-primary;
+  @apply bg-background text-text-main transition-theme selection:bg-primary/30 selection:text-primary;
 }
