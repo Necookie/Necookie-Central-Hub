@@ -6,24 +6,22 @@ const MealTracker = () => {
   const [meals, setMeals] = useState([]);
   const [totalCals, setTotalCals] = useState(0);
   const [isAdding, setIsAdding] = useState(false);
-  const [newMeal, setNewMeal] = useState({ name: '', calories: '' });
+  const [newMeal, setNewMeal] = useState({ meal_name: '', calories: '' });
 
   useEffect(() => {
     fetchTodayMeals();
-    
-    // Listen for updates from other components (like the Header)
+    // Subscribe to live updates
     const channel = supabase.channel('meal_tracker_sync')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'meals' }, () => {
         fetchTodayMeals();
       })
       .subscribe();
-
     return () => supabase.removeChannel(channel);
   }, []);
 
   const fetchTodayMeals = async () => {
     const { data: { user } } = await supabase.auth.getUser();
-    if(!user) return;
+    if (!user) return;
 
     const today = new Date();
     today.setHours(0,0,0,0);
@@ -42,21 +40,20 @@ const MealTracker = () => {
   };
 
   const addMeal = async () => {
-    if (!newMeal.name || !newMeal.calories) return;
+    if (!newMeal.meal_name || !newMeal.calories) return;
     
     const { data: { user } } = await supabase.auth.getUser();
     
-    // FIXED: Using 'meal_name' to match your Supabase table
+    // FIXED: Using 'meal_name' to match your database
     const { error } = await supabase.from('meals').insert([{
       user_id: user.id,
-      meal_name: newMeal.name, 
+      meal_name: newMeal.meal_name, 
       calories: parseInt(newMeal.calories)
     }]);
 
     if (!error) {
       setIsAdding(false);
-      setNewMeal({ name: '', calories: '' });
-      // The subscription above will trigger a refresh automatically
+      setNewMeal({ meal_name: '', calories: '' });
     } else {
       console.error("Error adding meal:", error);
     }
@@ -67,7 +64,6 @@ const MealTracker = () => {
 
   return (
     <div className="bg-white border border-slate-200/60 rounded-3xl p-6 shadow-sm h-full flex flex-col justify-between">
-      {/* Header */}
       <div className="flex justify-between items-start">
         <div>
           <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">Calories</p>
@@ -79,7 +75,6 @@ const MealTracker = () => {
         <div className="bg-orange-50 p-2 rounded-lg text-orange-500"><Flame size={20} /></div>
       </div>
 
-      {/* List / Input */}
       <div className="flex-1 mt-4 overflow-y-auto custom-scrollbar max-h-[120px]">
         {isAdding ? (
           <div className="space-y-2 bg-slate-50 p-3 rounded-xl border border-slate-100 animate-in fade-in zoom-in-95">
@@ -90,8 +85,8 @@ const MealTracker = () => {
             <input 
               type="text" 
               placeholder="Meal Name" 
-              value={newMeal.name}
-              onChange={(e) => setNewMeal({...newMeal, name: e.target.value})}
+              value={newMeal.meal_name}
+              onChange={(e) => setNewMeal({...newMeal, meal_name: e.target.value})}
               className="w-full text-xs p-2 rounded border border-slate-200 focus:border-orange-400 outline-none"
               autoFocus
             />
@@ -115,7 +110,7 @@ const MealTracker = () => {
                 <div key={meal.id} className="flex items-center justify-between text-xs pb-2 border-b border-slate-100 last:border-0">
                   <div className="flex items-center gap-2">
                     <div className="w-1.5 h-1.5 rounded-full bg-orange-400" />
-                    {/* FIXED: Reading 'meal_name' correctly */}
+                    {/* FIXED: Reading meal_name */}
                     <span className="text-slate-600 truncate max-w-[100px]">{meal.meal_name}</span>
                   </div>
                   <span className="font-mono text-slate-400">{meal.calories}</span>

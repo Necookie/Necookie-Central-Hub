@@ -12,23 +12,24 @@ const RecentLogs = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const [tasks, meals, workouts] = await Promise.all([
-        supabase.from('tasks').select('*').eq('user_id', user.id).eq('is_completed', true).order('created_at', { ascending: false }).limit(5),
+      const [tasks, meals, exercises] = await Promise.all([
+        supabase.from('tasks').select('*').eq('user_id', user.id).eq('completed', true).order('created_at', { ascending: false }).limit(5),
         supabase.from('meals').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(5),
-        supabase.from('workouts').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(5)
+        supabase.from('exercise').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(5)
       ]);
 
+      // FIXED: Mapping 'description' from tasks
       const normalizedTasks = (tasks.data || []).map(t => ({
-        id: t.id, type: 'task', content: t.text, time: t.created_at, icon: CheckCircle2, color: 'text-slate-400'
+        id: t.id, type: 'task', content: t.description, time: t.created_at, icon: CheckCircle2, color: 'text-slate-400'
       }));
       
-      // FIXED: Using 'meal_name'
+      // FIXED: Mapping 'meal_name' from meals
       const normalizedMeals = (meals.data || []).map(m => ({
         id: m.id, type: 'meal', content: `Ate ${m.meal_name || 'Food'} (${m.calories}kcal)`, time: m.created_at, icon: Utensils, color: 'text-emerald-400'
       }));
       
-      const normalizedWorkouts = (workouts.data || []).map(w => ({
-        id: w.id, type: 'workout', content: `${w.activity_type} • ${w.distance_km || 0}km`, time: w.created_at, icon: Zap, color: 'text-orange-400'
+      const normalizedWorkouts = (exercises.data || []).map(w => ({
+        id: w.id, type: 'workout', content: `${w.type} • ${w.distance_km || 0}km`, time: w.created_at, icon: Zap, color: 'text-orange-400'
       }));
 
       const allLogs = [...normalizedTasks, ...normalizedMeals, ...normalizedWorkouts]
@@ -47,14 +48,27 @@ const RecentLogs = () => {
     fetchLogs();
     const channel = supabase.channel('dashboard_feed')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'tasks' }, (payload) => {
-        if(payload.new.is_completed) addNewLog({ id: payload.new.id, type: 'task', content: payload.new.text, time: payload.new.created_at, icon: CheckCircle2, color: 'text-slate-400' });
+        if(payload.new.completed) {
+            addNewLog({ 
+                id: payload.new.id, type: 'task', 
+                content: payload.new.description, // Fix here
+                time: payload.new.created_at, icon: CheckCircle2, color: 'text-slate-400' 
+            });
+        }
       })
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'meals' }, (payload) => {
-        // FIXED: Using 'meal_name' from payload
-        addNewLog({ id: payload.new.id, type: 'meal', content: `Ate ${payload.new.meal_name || 'Food'} (${payload.new.calories}kcal)`, time: payload.new.created_at, icon: Utensils, color: 'text-emerald-400' });
+        addNewLog({ 
+            id: payload.new.id, type: 'meal', 
+            content: `Ate ${payload.new.meal_name || 'Food'} (${payload.new.calories}kcal)`, 
+            time: payload.new.created_at, icon: Utensils, color: 'text-emerald-400' 
+        });
       })
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'workouts' }, (payload) => {
-        addNewLog({ id: payload.new.id, type: 'workout', content: `${payload.new.activity_type}`, time: payload.new.created_at, icon: Zap, color: 'text-orange-400' });
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'exercise' }, (payload) => {
+        addNewLog({ 
+            id: payload.new.id, type: 'workout', 
+            content: `${payload.new.type}`, 
+            time: payload.new.created_at, icon: Zap, color: 'text-orange-400' 
+        });
       })
       .subscribe();
 
@@ -94,6 +108,13 @@ const RecentLogs = () => {
             </div>
           ))
         }
+      </div>
+      
+      <div className="mt-2 pt-3 border-t border-slate-800 flex justify-between items-center text-[10px] text-slate-600">
+        <span>root@necookie_hub</span>
+        <span className="flex items-center gap-1.5 text-emerald-500 animate-pulse">
+          <Activity size={10} /> LISTENING
+        </span>
       </div>
     </div>
   );

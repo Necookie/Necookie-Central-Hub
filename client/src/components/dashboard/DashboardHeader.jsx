@@ -53,12 +53,22 @@ const DashboardHeader = () => {
         const dur = parseInt((text.match(/(\d+)\s*min/i) || [null, 30])[1]);
         const type = text.toLowerCase().includes('run') ? 'Run' : 'Workout';
         
-        await supabase.from('workouts').insert([{
-          user_id: user.id, activity_type: type, distance_km: dist, duration_minutes: dur, calories: 0 
+        // Match WorkoutCard schema
+        await supabase.from('exercise').insert([{
+            user_id: user.id,
+            type: type,
+            distance_km: dist,
+            duration_mins: dur,
+            calories_burned: dur * 8
         }]);
       } 
       else {
-        await supabase.from('tasks').insert([{ user_id: user.id, text, is_completed: true }]);
+        // FIXED: Using 'description' to match TaskWidget
+        await supabase.from('tasks').insert([{ 
+            user_id: user.id, 
+            description: text, 
+            completed: true 
+        }]);
       }
 
       setStatus("");
