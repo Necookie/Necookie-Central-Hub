@@ -23,36 +23,44 @@ const Dashboard = () => {
         {/* LEFT COLUMN (Wider) */}
         <div className="md:col-span-2 lg:col-span-3 space-y-6">
           
-          {/* ROW 1: AI Insight (Daily Briefing) */}
-          <div className="h-48">
+          {/* ROW 1: AI Insight */}
+          {/* Mobile: Auto height | Desktop: Fixed 48 (192px) */}
+          <div className="h-auto md:h-48">
             <AIBlogCard />
           </div>
 
           {/* ROW 2: Key Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 h-64">
-            <div className="md:col-span-2">
+          {/* Mobile: Auto height | Desktop: Fixed 64 (256px) */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 h-auto md:h-64">
+            <div className="md:col-span-2 min-h-[200px]">
                <AllowanceCard />
             </div>
-            <div className="md:col-span-1">
+            <div className="md:col-span-1 min-h-[200px]">
                <BMIWidget />
             </div>
           </div>
 
           {/* ROW 3: Trackers */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-80">
-            <SleepTracker />
-            <ActivityTimer /> 
+          {/* Mobile: Auto height | Desktop: Fixed 80 (320px) */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-auto md:h-80">
+            <div className="min-h-[300px] md:min-h-0">
+              <SleepTracker />
+            </div>
+            <div className="min-h-[300px] md:min-h-0">
+              <ActivityTimer /> 
+            </div>
           </div>
 
           {/* ROW 4: Actions */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 h-64">
-             <div className="md:col-span-1">
+          {/* Mobile: Auto height | Desktop: Fixed 64 (256px) */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 h-auto md:h-64">
+             <div className="md:col-span-1 min-h-[220px]">
                 <MealTracker />
              </div>
-             <div className="md:col-span-1">
+             <div className="md:col-span-1 min-h-[220px]">
                 <TaskWidget />
              </div>
-             <div className="md:col-span-1">
+             <div className="md:col-span-1 min-h-[220px]">
                 <WorkoutCard />
              </div>
           </div>
@@ -60,7 +68,8 @@ const Dashboard = () => {
         </div>
 
         {/* RIGHT COLUMN (Tall Sidebar) */}
-        <div className="md:col-span-1 lg:col-span-1 h-full min-h-[500px]">
+        {/* Mobile: Fixed Height 500px | Desktop: Full Height */}
+        <div className="md:col-span-1 lg:col-span-1 h-[500px] md:h-full md:min-h-[500px]">
           <RecentLogs />
         </div>
 
