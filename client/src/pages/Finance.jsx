@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   ArrowUpRight, ArrowDownRight, Trash2, X, CreditCard, TrendingUp, TrendingDown, Calendar 
 } from 'lucide-react';
@@ -54,40 +54,26 @@ const useFinance = () => {
     }
   };
 
-  /**
-   * Memoized Stats Calculation
-   * Complexity: O(n) - Iterates logs once.
-   * Optimization: Only runs when 'logs' dependency changes.
-   */
   const stats = useMemo(() => {
     const today = new Date();
-    let acc = {
-      totalBalance: 0,
-      incomeToday: 0,
-      expenseToday: 0,
-      expenseWeek: 0
-    };
+    let acc = { totalBalance: 0, incomeToday: 0, expenseToday: 0, expenseWeek: 0 };
 
     logs.forEach(log => {
       const val = parseFloat(log.amount);
       const logDate = parseISO(log.date);
 
-      // 1. Net Balance
       if (log.type === 'income') acc.totalBalance += val;
       else acc.totalBalance -= val;
 
-      // 2. Today's Stats
       if (isSameDay(logDate, today)) {
         if (log.type === 'income') acc.incomeToday += val;
         else acc.expenseToday += val;
       }
 
-      // 3. Weekly Stats (Mon-Sun)
       if (log.type === 'expense' && isSameWeek(logDate, today, { weekStartsOn: 1 })) {
         acc.expenseWeek += val;
       }
     });
-
     return acc;
   }, [logs]);
 
@@ -101,20 +87,25 @@ const useFinance = () => {
 const StatCards = ({ stats, onOpenModal }) => (
   <>
     {/* MAIN BALANCE CARD */}
-    <div className="max-w-5xl mx-auto mb-8">
-      <h1 className="text-3xl font-bold text-text-main tracking-tight mb-6">Financial Command</h1>
-      <div className="bg-gradient-to-br from-slate-900 to-slate-800 text-white p-8 rounded-3xl shadow-2xl relative overflow-hidden border border-slate-700">
+    <div className="max-w-5xl mx-auto mb-6 md:mb-8">
+      <h1 className="text-2xl md:text-3xl font-bold text-text-main tracking-tight mb-4 md:mb-6">Financial Command</h1>
+      
+      {/* RESPONSIVE: p-6 on mobile, p-8 on desktop */}
+      <div className="bg-gradient-to-br from-slate-900 to-slate-800 text-white p-6 md:p-8 rounded-3xl shadow-2xl relative overflow-hidden border border-slate-700">
         <div className="absolute top-0 right-0 p-10 opacity-10 pointer-events-none">
           <CreditCard size={150} />
         </div>
-        <div className="relative z-10 flex flex-col md:flex-row justify-between items-end gap-6">
+        <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
           <div>
-            <p className="text-slate-400 font-bold text-xs uppercase tracking-widest mb-2">Net Available Balance</p>
-            <h2 className="text-5xl md:text-6xl font-bold font-mono tracking-tighter">
+            <p className="text-slate-400 font-bold text-[10px] md:text-xs uppercase tracking-widest mb-1 md:mb-2">Net Available Balance</p>
+            {/* RESPONSIVE: text-4xl on mobile, text-6xl on desktop */}
+            <h2 className="text-4xl md:text-6xl font-bold font-mono tracking-tighter">
               ₱{stats.totalBalance.toLocaleString()}
             </h2>
           </div>
-          <div className="flex gap-3">
+          
+          {/* RESPONSIVE: Stack buttons on mobile (w-full), row on desktop */}
+          <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
             <ActionButton 
               icon={<ArrowUpRight size={20} />} 
               label="Add Income" 
@@ -133,7 +124,7 @@ const StatCards = ({ stats, onOpenModal }) => (
     </div>
 
     {/* ANALYTICS GRID */}
-    <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    <div className="max-w-5xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
       <MiniStatCard 
         label="Today's Burn" 
         amount={stats.expenseToday} 
@@ -158,8 +149,8 @@ const StatCards = ({ stats, onOpenModal }) => (
 
 const TransactionTable = ({ logs, loading, onDelete }) => (
   <div className="max-w-5xl mx-auto bg-surface border border-border rounded-3xl overflow-hidden shadow-card">
-    <div className="p-6 border-b border-border">
-      <h3 className="text-lg font-bold text-text-main">Transaction Ledger</h3>
+    <div className="p-4 md:p-6 border-b border-border">
+      <h3 className="text-base md:text-lg font-bold text-text-main">Transaction Ledger</h3>
     </div>
     
     {loading ? (
@@ -169,32 +160,34 @@ const TransactionTable = ({ logs, loading, onDelete }) => (
     ) : (
       <div className="overflow-x-auto">
         <table className="w-full text-left">
-          <thead className="bg-surface-highlight text-xs font-bold text-text-muted uppercase tracking-wider">
+          <thead className="bg-surface-highlight text-[10px] md:text-xs font-bold text-text-muted uppercase tracking-wider">
             <tr>
-              <th className="p-4">Date</th>
-              <th className="p-4">Category</th>
-              <th className="p-4">Description</th>
-              <th className="p-4 text-right">Amount</th>
-              <th className="p-4 w-10"></th>
+              <th className="p-3 md:p-4">Date</th>
+              <th className="p-3 md:p-4">Category</th>
+              <th className="p-3 md:p-4">Description</th>
+              <th className="p-3 md:p-4 text-right">Amount</th>
+              <th className="p-3 md:p-4 w-10"></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
             {logs.map((log) => (
               <tr key={log.id} className="hover:bg-surface-highlight/50 transition-colors group">
-                <td className="p-4 text-text-main text-sm font-medium whitespace-nowrap">
-                  {format(parseISO(log.date), 'MMM d, yyyy')}
+                <td className="p-3 md:p-4 text-text-main text-xs md:text-sm font-medium whitespace-nowrap">
+                  {format(parseISO(log.date), 'MMM d')}
                 </td>
-                <td className="p-4">
+                <td className="p-3 md:p-4">
                   <CategoryBadge type={log.type} category={log.category} />
                 </td>
-                <td className="p-4 text-text-muted text-sm">{log.description || '-'}</td>
-                <td className={`p-4 text-right font-mono font-bold ${
+                <td className="p-3 md:p-4 text-text-muted text-xs md:text-sm max-w-[120px] md:max-w-none truncate">
+                  {log.description || '-'}
+                </td>
+                <td className={`p-3 md:p-4 text-right font-mono font-bold text-xs md:text-base ${
                   log.type === 'income' ? 'text-emerald-500' : 'text-text-main'
                 }`}>
                   {log.type === 'income' ? '+' : '-'} ₱{log.amount.toLocaleString()}
                 </td>
-                <td className="p-4 text-right">
-                    <button onClick={() => onDelete(log.id)} className="text-text-muted hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity">
+                <td className="p-3 md:p-4 text-right">
+                    <button onClick={() => onDelete(log.id)} className="text-text-muted hover:text-red-500 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                       <Trash2 size={16} />
                     </button>
                 </td>
@@ -208,7 +201,6 @@ const TransactionTable = ({ logs, loading, onDelete }) => (
 );
 
 const TransactionModal = ({ isOpen, type, onClose, onConfirm }) => {
-  // Isolate form state here to prevent parent re-renders
   const [formData, setFormData] = useState({
     amount: '',
     category: '',
@@ -216,7 +208,6 @@ const TransactionModal = ({ isOpen, type, onClose, onConfirm }) => {
     date: new Date().toISOString().split('T')[0]
   });
 
-  // Reset or Set Defaults when modal opens
   useEffect(() => {
     if (isOpen) {
       setFormData({
@@ -246,9 +237,10 @@ const TransactionModal = ({ isOpen, type, onClose, onConfirm }) => {
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      {/* RESPONSIVE: Full width on mobile with m-4 margin */}
       <div className="bg-surface w-full max-w-md rounded-3xl shadow-2xl border border-border animate-in zoom-in-95 duration-200 overflow-hidden">
         {/* HEADER */}
-        <div className={`p-6 border-b border-border flex justify-between items-center bg-${colorTheme}-500/10`}>
+        <div className={`p-4 md:p-6 border-b border-border flex justify-between items-center bg-${colorTheme}-500/10`}>
           <h3 className={`text-lg font-bold flex items-center gap-2 text-${colorTheme}-600`}>
             {type === 'income' ? <ArrowUpRight size={20}/> : <ArrowDownRight size={20}/>}
             Add {type === 'income' ? 'Income' : 'Expense'}
@@ -257,7 +249,7 @@ const TransactionModal = ({ isOpen, type, onClose, onConfirm }) => {
         </div>
 
         {/* FORM */}
-        <div className="p-6 space-y-4">
+        <div className="p-4 md:p-6 space-y-4">
           <div>
             <label className="block text-xs font-bold text-text-muted uppercase mb-1.5">Amount</label>
             <div className="relative">
@@ -292,7 +284,8 @@ const TransactionModal = ({ isOpen, type, onClose, onConfirm }) => {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          {/* RESPONSIVE: Stack Description and Date on mobile */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold text-text-muted uppercase mb-1.5">Description</label>
               <input 
@@ -316,7 +309,7 @@ const TransactionModal = ({ isOpen, type, onClose, onConfirm }) => {
         </div>
 
         {/* FOOTER */}
-        <div className="p-6 bg-surface-highlight border-t border-border flex justify-end gap-3">
+        <div className="p-4 md:p-6 bg-surface-highlight border-t border-border flex justify-end gap-3">
           <button onClick={onClose} className="px-5 py-2.5 text-text-muted font-bold hover:bg-border rounded-xl transition-colors">Cancel</button>
           <button 
             onClick={handleSubmit} 
@@ -330,24 +323,26 @@ const TransactionModal = ({ isOpen, type, onClose, onConfirm }) => {
   );
 };
 
-// --- HELPER COMPONENTS (For cleaner JSX) ---
+// --- HELPER COMPONENTS ---
 
 const ActionButton = ({ icon, label, colorClass, onClick }) => (
   <button 
     onClick={onClick}
-    className={`flex items-center gap-2 px-6 py-3 text-white rounded-xl font-bold transition-all shadow-lg active:scale-95 ${colorClass}`}
+    // RESPONSIVE: w-full on mobile, flex-1, standard padding adjustments
+    className={`flex items-center justify-center gap-2 px-4 py-3 md:px-6 md:py-3 w-full md:w-auto text-white rounded-xl font-bold transition-all shadow-lg active:scale-95 ${colorClass}`}
   >
     {icon} {label}
   </button>
 );
 
 const MiniStatCard = ({ label, amount, icon, color }) => (
-  <div className="bg-surface p-5 rounded-2xl border border-border shadow-sm">
+  // RESPONSIVE: Adjusted padding for smaller screens
+  <div className="bg-surface p-4 md:p-5 rounded-2xl border border-border shadow-sm">
     <div className="flex justify-between items-start mb-2">
       <div className={`p-2 bg-${color}-500/10 rounded-lg text-${color}-500`}>{icon}</div>
       <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider">{label}</span>
     </div>
-    <p className="text-2xl font-bold text-text-main">₱{amount.toLocaleString()}</p>
+    <p className="text-xl md:text-2xl font-bold text-text-main">₱{amount.toLocaleString()}</p>
   </div>
 );
 
@@ -355,7 +350,7 @@ const CategoryBadge = ({ type, category }) => {
   const isIncome = type === 'income';
   const color = isIncome ? 'emerald' : 'rose';
   return (
-    <span className={`px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wide border bg-${color}-500/10 text-${color}-600 border-${color}-500/20`}>
+    <span className={`inline-block px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wide border bg-${color}-500/10 text-${color}-600 border-${color}-500/20 whitespace-nowrap`}>
       {category}
     </span>
   );
@@ -365,10 +360,7 @@ const CategoryBadge = ({ type, category }) => {
 // 4. MAIN PAGE COMPONENT
 // ==========================================
 const Finance = () => {
-  // Use Custom Hook
   const { logs, loading, stats, addTransaction, deleteTransaction } = useFinance();
-  
-  // UI State (Modal)
   const [modalConfig, setModalConfig] = useState({ isOpen: false, type: 'income' });
 
   const openModal = (type) => setModalConfig({ isOpen: true, type });
@@ -380,7 +372,8 @@ const Finance = () => {
   };
 
   return (
-    <div className="p-8 h-screen overflow-y-auto custom-scrollbar pb-24">
+    // RESPONSIVE: Reduced padding on mobile (p-4) to maximize screen real estate
+    <div className="p-4 md:p-8 pb-24">
       <StatCards stats={stats} onOpenModal={openModal} />
       
       <TransactionTable 
