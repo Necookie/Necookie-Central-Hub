@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Bell, Zap, Activity, Utensils, Edit3 } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../api';
-import ThemeSelector from '../ThemeSelector'; // <--- THEME PICKER
+import ThemeSelector from '../ThemeSelector'; 
 
 const DashboardHeader = () => {
   const queryClient = useQueryClient();
@@ -20,12 +20,9 @@ const DashboardHeader = () => {
   const hour = currentDate.getHours();
   const greeting = hour < 12 ? "Good Morning" : hour < 18 ? "Good Afternoon" : "Good Evening";
 
-  // --- MUTATIONS ---
   const generateAiMutation = useMutation({
     mutationFn: api.generateDailySummary,
-    onSuccess: () => {
-      queryClient.invalidateQueries(['dailySummary']); 
-    }
+    onSuccess: () => { queryClient.invalidateQueries(['dailySummary']); }
   });
 
   const triggerUpdate = () => {
@@ -35,10 +32,7 @@ const DashboardHeader = () => {
 
   const mealMutation = useMutation({ 
     mutationFn: (vars) => api.addMeal(vars), 
-    onSuccess: () => { 
-      queryClient.invalidateQueries(['meals']); 
-      triggerUpdate();
-    }
+    onSuccess: () => { queryClient.invalidateQueries(['meals']); triggerUpdate(); }
   });
 
   const workoutMutation = useMutation({ 
@@ -55,7 +49,6 @@ const DashboardHeader = () => {
     onSuccess: () => triggerUpdate()
   });
 
-  // --- HANDLERS ---
   const handleInputChange = (e) => {
     const text = e.target.value;
     setStatus(text);
@@ -120,7 +113,6 @@ const DashboardHeader = () => {
             placeholder="Log anything... (e.g., 'Coding', 'Ate Pizza', 'Ran 5km')" 
             className="bg-transparent border-none outline-none text-xs w-full text-text-main placeholder:text-text-muted font-sans" 
           />
-          {/* Spinner */}
           {(mealMutation.isPending || workoutMutation.isPending || taskMutation.isPending || generateAiMutation.isPending) && (
              <Zap size={14} className="animate-spin text-primary shrink-0" />
           )}
@@ -130,22 +122,19 @@ const DashboardHeader = () => {
         <div className="hidden md:block text-right">
           <p className="text-[9px] font-bold text-text-muted uppercase tracking-widest mb-0.5">System Status</p>
           <div className="flex items-center justify-end gap-3">
-            <span className="px-1.5 py-0.5 rounded-md bg-amber-100 border border-amber-200 text-amber-600 text-[9px] font-bold tracking-tight">v0.1</span>
+            <span className="px-1.5 py-0.5 rounded-md bg-amber-100 border border-amber-200 text-amber-600 dark:bg-amber-900/30 dark:border-amber-800 dark:text-amber-400 text-[9px] font-bold tracking-tight">v0.1</span>
             <div className="flex items-center gap-1.5">
                <span className="relative flex h-1.5 w-1.5">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
                 </span>
-              <span className="text-xs font-bold text-emerald-600 font-mono">ONLINE</span>
+              <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 font-mono">ONLINE</span>
             </div>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          
-          {/* NEW: THEME SELECTOR DROPDOWN */}
           <ThemeSelector />
-
           <button className="relative p-2 rounded-xl bg-surface border border-border hover:bg-background transition-all shadow-sm group">
             <Bell size={20} className="text-text-muted group-hover:text-text-main" />
             <span className="absolute top-2 right-2.5 w-2 h-2 bg-red-500 rounded-full border border-surface" />

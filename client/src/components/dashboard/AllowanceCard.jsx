@@ -1,13 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { api } from '../../api'; // Adjust path if needed based on folder structure
+import { api } from '../../api';
 import { subDays, isSameDay, parseISO } from 'date-fns';
 
 const AllowanceCard = () => {
   const [balance, setBalance] = useState(0);
-  const [graphData, setGraphData] = useState([10, 30, 20, 50, 40]); // Default placeholders
+  const [graphData, setGraphData] = useState([10, 30, 20, 50, 40]);
   const [loading, setLoading] = useState(true);
 
-  // Professional Currency Formatting
   const formatter = new Intl.NumberFormat('en-PH', {
     style: 'currency',
     currency: 'PHP',
@@ -20,10 +19,8 @@ const AllowanceCard = () => {
   const fetchFinancialData = async () => {
     try {
       const records = await api.fetchFinanceRecords();
-      
       if (!records) return;
 
-      // 1. Calculate Net Balance
       let total = 0;
       records.forEach(log => {
         const val = parseFloat(log.amount);
@@ -32,27 +29,20 @@ const AllowanceCard = () => {
       });
       setBalance(total);
 
-      // 2. Calculate Spending Trend (Last 5 Days)
       const today = new Date();
       const dailyExpenses = [];
 
-      // Loop backwards: 4 days ago -> Today
       for (let i = 4; i >= 0; i--) {
         const targetDate = subDays(today, i);
         const dayExpense = records
-          .filter(log => 
-            log.type === 'expense' && 
-            isSameDay(parseISO(log.date), targetDate)
-          )
+          .filter(log => log.type === 'expense' && isSameDay(parseISO(log.date), targetDate))
           .reduce((sum, log) => sum + parseFloat(log.amount), 0);
-        
         dailyExpenses.push(dayExpense);
       }
 
-      // Normalize heights (Max value = 100% height)
-      const maxSpend = Math.max(...dailyExpenses, 100); // Minimum 100 to prevent divide by zero
+      const maxSpend = Math.max(...dailyExpenses, 100);
       const normalizedHeights = dailyExpenses.map(val => 
-        Math.max(10, Math.round((val / maxSpend) * 100)) // Min height 10% for aesthetics
+        Math.max(10, Math.round((val / maxSpend) * 100))
       );
 
       setGraphData(normalizedHeights);
@@ -64,7 +54,7 @@ const AllowanceCard = () => {
   };
 
   return (
-    <div className="bg-surface border border-border rounded-3xl p-6 flex flex-col justify-between shadow-sm h-full transition-all">
+    <div className="bg-surface border border-border rounded-3xl p-6 flex flex-col justify-between shadow-sm h-full transition-theme">
       <div className="flex justify-between items-start">
         <div>
           <p className="text-text-muted text-xs font-bold uppercase tracking-widest mb-1">Allowance</p>
@@ -72,14 +62,13 @@ const AllowanceCard = () => {
             {loading ? '...' : formatter.format(balance)}
           </h2>
         </div>
-        <div className="bg-emerald-500/10 p-2 rounded-lg text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+        <div className="bg-emerald-500/10 p-2 rounded-lg text-emerald-500 border border-emerald-500/20">
           <span className="text-xs font-bold font-mono">
              {balance > 0 ? 'Active' : 'Low'}
           </span>
         </div>
       </div>
       
-      {/* Dynamic Spending Graph */}
       <div className="mt-6 flex items-end gap-1 h-12">
         {graphData.map((height, idx) => (
           <div 
@@ -87,7 +76,7 @@ const AllowanceCard = () => {
             className={`w-1/5 rounded-t-sm transition-all duration-500 ${
               idx === 4 
                 ? 'bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.3)]' 
-                : 'bg-surface-highlight dark:bg-slate-700'
+                : 'bg-surface-highlight'
             }`}
             style={{ height: `${height}%` }}
             title={`Day ${idx + 1}`}
