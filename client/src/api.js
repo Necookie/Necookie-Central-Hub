@@ -16,7 +16,6 @@ const getLocalYYYYMMDD = () => {
 
 export const api = {
   // --- AI INTELLIGENCE ---
-  
   fetchLatestSummary: async () => {
     const user = await getUser();
     const today = getLocalYYYYMMDD(); 
@@ -37,12 +36,12 @@ export const api = {
     console.log("🧠 GATHERING DATA FOR AI...");
     const user = await getUser();
     
-    // 1. Fetch History (Midnight Local to Now)
+    // 1. Fetch History
     const startOfDay = new Date();
     startOfDay.setHours(0, 0, 0, 0); 
     
     const { data: history } = await supabase
-      .from('unified_history') // This now includes JOURNAL due to the SQL update
+      .from('unified_history')
       .select('*')
       .eq('user_id', user.id)
       .gte('timestamp', startOfDay.toISOString())
@@ -53,31 +52,26 @@ export const api = {
         return;
     }
 
-    // 2. Format Data Structure for AI
+    // 2. Format Data
     const activityLog = history.map(h => 
       `- [${new Date(h.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}] ${h.type.toUpperCase()}: ${h.content} ${h.secondary_info ? `(${h.secondary_info})` : ''}`
     ).join('\n');
 
     console.log("📝 SENDING CONTEXT TO AI:\n", activityLog);
 
-    // 3. THE "EVERYTHING" PROMPT
+    // 3. Prompt
     const prompt = `
       You are Dheyn's personal AI life narrator.
-      
       Here is his ENTIRE activity log for today (from 12:00 AM to now):
       ${activityLog}
       
       INSTRUCTIONS:
-      1. **Analyze his Mood:** Look specifically for "JOURNAL" entries. How is he feeling? Reflect this in your tone.
-      2. **Judge his Diet:** Look at "MEAL" entries. Is he eating healthy or trash? Roast him gently if it's junk.
-      3. **Track Productivity:** Look at "TASK" and "SESSION" (Coding/Gaming).
-      4. **Synthesis:** Combine all these into a short, witty, "Blog-Style" daily recap (max 3-4 sentences). 
-      
+      1. Analyze Mood (Journal), Diet (Meals), and Productivity (Tasks/Sessions).
+      2. Write a short, witty, "Blog-Style" daily recap (max 3-4 sentences).
       TONE: Gen-Z, unfiltered, supportive but real. Use emojis.
     `;
 
     try {
-      // 4. Call OpenAI (Direct Proxy)
       const response = await fetch('/api/openai/chat/completions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -88,34 +82,23 @@ export const api = {
         })
       });
 
-      if (!response.ok) {
-        const errText = await response.text();
-        throw new Error(`AI Request Failed: ${errText}`);
-      }
+      if (!response.ok) throw new Error(`AI Request Failed`);
       
       const aiData = await response.json();
       const summaryText = aiData.choices[0].message.content;
 
-      console.log("✅ AI WROTE:", summaryText);
-
-      // 5. Save Summary
       await supabase.from('daily_summaries').insert([
-        { 
-          user_id: user.id, 
-          content: summaryText, 
-          date: getLocalYYYYMMDD()
-        }
+        { user_id: user.id, content: summaryText, date: getLocalYYYYMMDD() }
       ]);
       
       return summaryText;
-
     } catch (error) {
       console.error("❌ AI Generation Error:", error);
       return null;
     }
   },
 
-  // --- STANDARD FETCHES (No changes needed below here, but keeping for completeness) ---
+  // --- STANDARD FETCHES ---
   fetchUnifiedHistory: async (limit = 50) => {
     const { data } = await supabase.from('unified_history').select('*').order('timestamp', { ascending: false }).limit(limit);
     return data;
@@ -157,6 +140,7 @@ export const api = {
     return supabase.from('exercise').insert([{ user_id: user.id, type, distance_km, duration_mins, calories_burned: duration_mins * 8 }]);
   },
 
+  // --- SESSIONS & SLEEP ---
   fetchActiveSession: async () => {
     const user = await getUser();
     const { data } = await supabase.from('activity_sessions').select('*').eq('user_id', user.id).is('end_time', null).maybeSingle();
@@ -201,6 +185,7 @@ export const api = {
     return supabase.from('sleep_logs').update({ wake_time: wakeTime.toISOString(), duration_minutes: durationMins }).eq('id', id);
   },
 
+  // --- JOURNAL & PRIVATE ---
   fetchJournal: async () => {
     const user = await getUser();
     const { data } = await supabase.from('journal_entries').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
@@ -220,5 +205,33 @@ export const api = {
     const user = await getUser();
     const { data } = await supabase.from('private_logs').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
     return data;
+  },
+
+  // --- FINANCE / BANKING SYSTEM (NEW) ---
+  fetchFinanceRecords: async () => {
+    const user = await getUser();
+    const { data } = await supabase
+      .from('finance_records')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('date', { ascending: false })
+      .order('created_at', { ascending: false });
+    return data;
+  },
+
+  addFinanceRecord: async ({ type, amount, category, description, date }) => {
+    const user = await getUser();
+    return supabase.from('finance_records').insert([{ 
+      user_id: user.id, 
+      type, 
+      amount, 
+      category, 
+      description, 
+      date 
+    }]).select();
+  },
+
+  deleteFinanceRecord: async (id) => {
+    return supabase.from('finance_records').delete().eq('id', id);
   }
 };

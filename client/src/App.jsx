@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { supabase } from './supabaseClient';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'; // <--- IMPORTANT
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'; 
 import MainLayout from './components/MainLayout';
 import { Zap } from 'lucide-react';
 
@@ -11,6 +11,7 @@ import Login from './pages/Login';
 import History from './pages/History';
 import Diary from './pages/Diary';
 import Vault from './pages/Vault';
+import Finance from './pages/Finance'; // <--- IMPORT THIS
 
 const queryClient = new QueryClient(); // The Data Brain
 
@@ -19,16 +20,21 @@ function App() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // 1. Listen for auth changes (Sign in / Sign out)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setLoading(false);
     });
+
+    // 2. Check active session on load
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) setLoading(false);
     });
+
     return () => subscription.unsubscribe();
   }, []);
 
+  // Loading Screen (Spinner)
   if (loading) return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center">
       <div className="animate-spin text-sky-500"><Zap size={48} fill="currentColor" /></div>
@@ -39,17 +45,23 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <Router>
         <Routes>
+          {/* Public Login Route */}
           <Route path="/login" element={!session ? <Login /> : <Navigate to="/" />} />
+
+          {/* Protected App Routes */}
           <Route path="/*" element={session ? (
               <MainLayout>
                 <Routes>
                   <Route path="/" element={<Dashboard />} />
                   <Route path="/history" element={<History />} />
                   <Route path="/diary" element={<Diary />} />
+                  <Route path="/finance" element={<Finance />} /> {/* <--- NEW ROUTE */}
                   <Route path="/vault" element={<Vault />} />
                 </Routes>
               </MainLayout>
-            ) : (<Navigate to="/login" />)} 
+            ) : (
+              <Navigate to="/login" />
+            )} 
           />
         </Routes>
       </Router>

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Zap, Clock, Lock, BookOpen, LayoutGrid, Menu } from 'lucide-react';
+// 1. IMPORT THE WALLET ICON
+import { Zap, Clock, Lock, BookOpen, LayoutGrid, Menu, Wallet } from 'lucide-react';
 import MiniChatbot from './MiniChatbot';
 
 const MainLayout = ({ children }) => {
@@ -9,15 +10,14 @@ const MainLayout = ({ children }) => {
   return (
     <div className="min-h-screen bg-background text-text-main font-sans selection:bg-primary/20 selection:text-primary overflow-hidden relative transition-theme">
       
-      {/* 1. Dynamic Background Glows */}
-      {/* Uses 'bg-primary' so the glow color matches the active theme automatically */}
+      {/* Dynamic Background Glows */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-[-20%] left-[-10%] w-[800px] h-[800px] bg-primary/15 blur-[120px] rounded-full mix-blend-screen opacity-100 dark:opacity-20 transition-all duration-1000" />
         <div className="absolute bottom-[-20%] right-[-10%] w-[600px] h-[600px] bg-primary/10 blur-[120px] rounded-full mix-blend-screen opacity-100 dark:opacity-20 transition-all duration-1000" />
       </div>
 
       <div className="flex h-screen relative z-10">
-        {/* 2. Navigation Rail (Sidebar) */}
+        {/* Navigation Rail */}
         <aside className="w-20 hidden md:flex flex-col items-center py-6 border-r border-border bg-surface/70 backdrop-blur-xl z-50 transition-theme">
           <div className="mb-10 p-2">
             <Link to="/" className="w-10 h-10 bg-gradient-to-br from-sky-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-sky-500/20 hover:scale-105 transition-transform">
@@ -29,6 +29,9 @@ const MainLayout = ({ children }) => {
             <NavIcon to="/" icon={<LayoutGrid size={24} />} active={location.pathname === '/'} />
             <NavIcon to="/history" icon={<Clock size={24} />} active={location.pathname === '/history'} />
             <NavIcon to="/diary" icon={<BookOpen size={24} />} active={location.pathname === '/diary'} />
+            
+            {/* 2. NEW FINANCE ICON ADDED HERE */}
+            <NavIcon to="/finance" icon={<Wallet size={24} />} active={location.pathname === '/finance'} />
             
             <div className="h-px w-8 bg-border my-2" />
             
@@ -42,7 +45,7 @@ const MainLayout = ({ children }) => {
           </div>
         </aside>
 
-        {/* 3. Content Area */}
+        {/* Content Area */}
         <main className="flex-1 flex flex-col h-full overflow-hidden">
           
           {/* Mobile Menu Trigger */}
@@ -72,7 +75,6 @@ const NavIcon = ({ to, icon, active, danger }) => (
       : 'text-text-muted hover:text-text-main hover:bg-surface-highlight'
   } ${danger ? 'hover:text-red-500 hover:bg-red-500/10' : ''}`}>
     {icon}
-    {/* Active Indicator Bar */}
     {active && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-primary rounded-r-full shadow-[0_0_12px_rgba(var(--primary),0.5)]" />}
   </Link>
 );
