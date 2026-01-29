@@ -1,39 +1,72 @@
 import React from 'react';
 import DashboardHeader from '../components/dashboard/DashboardHeader';
+import AllowanceCard from '../components/dashboard/AllowanceCard';
 import BMIWidget from '../components/dashboard/BMIWidget';
+import MealTracker from '../components/dashboard/MealTracker';
 import SleepTracker from '../components/dashboard/SleepTracker';
-import RecentLogs from '../components/dashboard/RecentLogs';
-import AIBlogCard from '../components/dashboard/AIBlogCard';
+import WorkoutCard from '../components/dashboard/WorkoutCard';
 import ActivityTimer from '../components/dashboard/ActivityTimer';
 import TaskWidget from '../components/dashboard/TaskWidget';
-import MealTracker from '../components/dashboard/MealTracker';
-import WorkoutCard from '../components/dashboard/WorkoutCard';
-import AllowanceCard from '../components/dashboard/AllowanceCard';
+import RecentLogs from '../components/dashboard/RecentLogs';
+import AIBlogCard from '../components/dashboard/AIBlogCard';
 
 const Dashboard = () => {
   return (
-    // UPDATED: Removed bg-slate-50/50. 
-    // The background is now handled by the MainLayout or body class.
-    <div className="flex flex-col h-full">
+    <div className="pb-10 space-y-6">
+      
+      {/* 1. Header */}
       <DashboardHeader />
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-6 pb-12 px-2 md:px-0 max-w-7xl mx-auto w-full">
-        {/* ROW 1 */}
-        <div className="col-span-1 md:col-span-8 h-full min-h-[300px]"><AIBlogCard /></div>
-        <div className="col-span-1 md:col-span-4 h-full"><BMIWidget /></div>
 
-        {/* ROW 2 */}
-        <div className="col-span-1 md:col-span-4 flex flex-col gap-6 h-full"><SleepTracker /><AllowanceCard /></div>
-        <div className="col-span-1 md:col-span-4 h-full"><ActivityTimer /></div>
-        <div className="col-span-1 md:col-span-4 h-full"><RecentLogs /></div>
+      {/* 2. Main Grid Layout */}
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        
+        {/* LEFT COLUMN (Wider) */}
+        <div className="md:col-span-2 lg:col-span-3 space-y-6">
+          
+          {/* ROW 1: AI Insight (Daily Briefing) */}
+          <div className="h-48">
+            <AIBlogCard />
+          </div>
 
-        {/* ROW 3 */}
-        <div className="col-span-1 md:col-span-12 grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="h-full"><MealTracker /></div>
-          <div className="h-full"><WorkoutCard /></div>
-          <div className="h-full"><TaskWidget /></div>
+          {/* ROW 2: Key Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 h-64">
+            <div className="md:col-span-2">
+               <AllowanceCard />
+            </div>
+            <div className="md:col-span-1">
+               <BMIWidget />
+            </div>
+          </div>
+
+          {/* ROW 3: Trackers */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-80">
+            <SleepTracker />
+            <ActivityTimer /> 
+          </div>
+
+          {/* ROW 4: Actions */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 h-64">
+             <div className="md:col-span-1">
+                <MealTracker />
+             </div>
+             <div className="md:col-span-1">
+                <TaskWidget />
+             </div>
+             <div className="md:col-span-1">
+                <WorkoutCard />
+             </div>
+          </div>
+
         </div>
+
+        {/* RIGHT COLUMN (Tall Sidebar) */}
+        <div className="md:col-span-1 lg:col-span-1 h-full min-h-[500px]">
+          <RecentLogs />
+        </div>
+
       </div>
     </div>
   );
 };
+
 export default Dashboard;
