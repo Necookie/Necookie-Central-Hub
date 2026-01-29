@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Moon, Sun, BarChart2, ArrowLeft } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../api';
-import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { format, subDays, isSameDay, parseISO } from 'date-fns';
 
 const SleepTracker = () => {
@@ -43,15 +43,28 @@ const SleepTracker = () => {
     return () => clearInterval(interval);
   }, [activeSleep]);
 
+  // --- SUM ALL SLEEP SESSIONS PER DAY ---
   const last7Days = Array.from({ length: 7 }).map((_, i) => {
     const d = subDays(new Date(), 6 - i);
-    const dayLog = sleepHistory.find(l => l.wake_time && isSameDay(parseISO(l.bed_time), d));
-    return { dayName: format(d, 'EEE'), hours: dayLog ? parseFloat((dayLog.duration_minutes / 60).toFixed(1)) : 0 };
+    const dayLogs = sleepHistory.filter(l => l.wake_time && isSameDay(parseISO(l.bed_time), d));
+    const totalMinutes = dayLogs.reduce((sum, log) => sum + (log.duration_minutes || 0), 0);
+
+    return { 
+      dayName: format(d, 'EEE'), 
+      hours: parseFloat((totalMinutes / 60).toFixed(1)) 
+    };
   });
 
   const lastSleep = sleepHistory[sleepHistory.length - 1];
+
+  // --- FIX: CALCULATE AVERAGE ONLY FOR DAYS WITH DATA ---
+  const daysWithData = last7Days.filter(day => day.hours > 0).length;
   const totalHours = last7Days.reduce((acc, curr) => acc + curr.hours, 0);
-  const avgSleep = (totalHours / 7).toFixed(1);
+  
+  // Prevent divide by zero if no data exists
+  const avgSleep = daysWithData > 0 
+    ? (totalHours / daysWithData).toFixed(1) 
+    : "0.0";
 
   return (
     <div className={`relative h-full border rounded-3xl p-6 transition-all duration-500 overflow-hidden flex flex-col justify-between ${
@@ -112,11 +125,12 @@ const SleepTracker = () => {
           )
         )}
         {view === 'trends' && (
-          <div className="h-40 w-full mt-2">
+          <div className="h-40 w-full mt-2 -ml-2">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={last7Days}>
                 <XAxis dataKey="dayName" axisLine={false} tickLine={false} tick={{fontSize: 10, fill: '#94a3b8'}} dy={10} />
-                <Tooltip cursor={{fill: 'rgba(255,255,255,0.1)', radius: 4}} contentStyle={{borderRadius: '12px', background: '#1e293b', border: 'none', color: '#fff'}} />
+                <YAxis hide domain={[0, 12]} />
+                <Tooltip cursor={{fill: 'rgba(255,255,255,0.05)', radius: 4}} contentStyle={{borderRadius: '12px', background: '#1e293b', border: 'none', color: '#fff', fontSize: '12px'}} />
                 <Bar dataKey="hours" radius={[4, 4, 4, 4]}>
                   {last7Days.map((entry, index) => <Cell key={index} fill={entry.hours >= 7 ? '#6366f1' : '#475569'} />)}
                 </Bar>
