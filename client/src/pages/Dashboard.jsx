@@ -12,65 +12,70 @@ import AIBlogCard from '../components/dashboard/AIBlogCard';
 
 const Dashboard = () => {
   return (
-    <div className="pb-10 space-y-6">
+    // 1. MAIN CONTAINER: Responsive Padding
+    // Mobile: p-4 | Desktop: p-8
+    // pb-24 ensures content isn't hidden behind mobile navs or bottom edges
+    <div className="p-4 md:p-8 pb-24 space-y-6 max-w-[1600px] mx-auto">
       
-      {/* 1. Header */}
       <DashboardHeader />
 
-      {/* 2. Main Grid Layout */}
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+      {/* 2. THE GRID SYSTEM */}
+      {/* Mobile: 1 col | Tablet: 2 cols | Desktop: 4 cols */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 auto-rows-fr">
         
-        {/* LEFT COLUMN (Wider) */}
-        <div className="md:col-span-2 lg:col-span-3 space-y-6">
+        {/* --- SECTION: MAIN CONTENT (Spans 3 cols on Desktop) --- */}
+        <div className="lg:col-span-3 space-y-6">
           
-          {/* ROW 1: AI Insight */}
-          {/* Mobile: Auto height | Desktop: Fixed 48 (192px) */}
-          <div className="h-auto md:h-48">
+          {/* A. AI INSIGHT */}
+          {/* min-h ensures it doesn't collapse while loading */}
+          <div className="w-full min-h-[180px]">
             <AIBlogCard />
           </div>
 
-          {/* ROW 2: Key Stats */}
-          {/* Mobile: Auto height | Desktop: Fixed 64 (256px) */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 h-auto md:h-64">
-            <div className="md:col-span-2 min-h-[200px]">
+          {/* B. KEY STATS ROW */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="md:col-span-2 min-h-[240px]">
                <AllowanceCard />
             </div>
-            <div className="md:col-span-1 min-h-[200px]">
+            <div className="md:col-span-1 min-h-[240px]">
                <BMIWidget />
             </div>
           </div>
 
-          {/* ROW 3: Trackers */}
-          {/* Mobile: Auto height | Desktop: Fixed 80 (320px) */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-auto md:h-80">
-            <div className="min-h-[300px] md:min-h-0">
+          {/* C. TRACKERS ROW */}
+          {/* On mobile, these stack. On desktop, they sit side-by-side. 
+              min-h-[320px] gives them the "Tall" look you want without forcing it. */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="min-h-[320px]">
               <SleepTracker />
             </div>
-            <div className="min-h-[300px] md:min-h-0">
+            <div className="min-h-[320px]">
               <ActivityTimer /> 
             </div>
           </div>
 
-          {/* ROW 4: Actions */}
-          {/* Mobile: Auto height | Desktop: Fixed 64 (256px) */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 h-auto md:h-64">
-             <div className="md:col-span-1 min-h-[220px]">
+          {/* D. ACTION ROW */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+             <div className="min-h-[240px]">
                 <MealTracker />
              </div>
-             <div className="md:col-span-1 min-h-[220px]">
+             <div className="min-h-[240px]">
                 <TaskWidget />
              </div>
-             <div className="md:col-span-1 min-h-[220px]">
+             <div className="min-h-[240px]">
                 <WorkoutCard />
              </div>
           </div>
 
         </div>
 
-        {/* RIGHT COLUMN (Tall Sidebar) */}
-        {/* Mobile: Fixed Height 500px | Desktop: Full Height */}
-        <div className="md:col-span-1 lg:col-span-1 h-[500px] md:h-full md:min-h-[500px]">
-          <RecentLogs />
+        {/* --- SECTION: SIDEBAR (Spans 1 col on Desktop) --- */}
+        {/* On Mobile: It becomes a normal card at the bottom.
+            On Desktop: It becomes a tall sticky sidebar. */}
+        <div className="lg:col-span-1 lg:h-full">
+          <div className="h-[500px] lg:h-full lg:sticky lg:top-6">
+            <RecentLogs />
+          </div>
         </div>
 
       </div>
