@@ -12,7 +12,7 @@ import Login from './pages/Login';
 import History from './pages/History';
 import Diary from './pages/Diary';
 import Vault from './pages/Vault';
-import Finance from './pages/finance'; 
+import Finance from './pages/Finance'; 
 
 const queryClient = new QueryClient();
 
