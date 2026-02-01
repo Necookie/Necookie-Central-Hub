@@ -1,30 +1,39 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState } from 'react';
 import { 
   LayoutGrid, ArrowRight, Wallet, BookOpen, 
   Activity, Terminal, Lock, Zap 
 } from 'lucide-react';
+import AuthModal from '../components/AuthModal'; // <--- Import the new modal
 
 const Landing = () => {
+  const [isAuthOpen, setIsAuthOpen] = useState(false); // <--- State for modal
+
   return (
     <div className="min-h-screen bg-background text-text-main font-sans selection:bg-primary/20 transition-theme overflow-x-hidden">
       
+      {/* MOUNT MODAL */}
+      <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
+
       {/* NAVBAR */}
-      <nav className="max-w-7xl mx-auto px-6 h-24 flex items-center justify-between relative z-50">
+      <nav className="max-w-7xl mx-auto px-6 h-24 flex items-center justify-between relative z-40">
         <div className="flex items-center gap-3 font-bold text-xl tracking-tight">
           <div className="w-10 h-10 bg-gradient-to-br from-sky-500 to-indigo-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-sky-500/20">
             <LayoutGrid size={20} />
           </div>
           Necookie Hub
         </div>
-        <Link to="/login" className="px-6 py-2.5 rounded-xl bg-surface border border-border hover:border-primary/50 hover:text-primary transition-all font-bold text-sm shadow-sm group">
+        
+        {/* LOGIN BUTTON (Triggers Modal) */}
+        <button 
+          onClick={() => setIsAuthOpen(true)}
+          className="px-6 py-2.5 rounded-xl bg-surface border border-border hover:border-primary/50 hover:text-primary transition-all font-bold text-sm shadow-sm group"
+        >
           Login <span className="inline-block transition-transform group-hover:translate-x-1">→</span>
-        </Link>
+        </button>
       </nav>
 
       {/* HERO SECTION */}
-      <div className="max-w-4xl mx-auto px-6 pt-12 pb-24 md:pt-20 md:pb-32 text-center relative">
-        {/* Background Glow FX */}
+      <div className="max-w-4xl mx-auto px-6 pt-12 pb-24 md:pt-20 md:pb-32 text-center relative z-10">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] md:w-[600px] md:h-[600px] bg-primary/10 rounded-full blur-[120px] pointer-events-none" />
         
         <div className="relative z-10 space-y-8">
@@ -45,14 +54,18 @@ const Landing = () => {
           </p>
 
           <div className="pt-8 animate-in fade-in slide-in-from-bottom-10 duration-1000">
-            <Link to="/login" className="inline-flex items-center gap-2 px-8 py-4 bg-text-main text-background rounded-2xl font-bold text-lg hover:scale-105 hover:shadow-2xl hover:shadow-primary/20 transition-all active:scale-95">
+            {/* CTA BUTTON (Triggers Modal) */}
+            <button 
+              onClick={() => setIsAuthOpen(true)}
+              className="inline-flex items-center gap-2 px-8 py-4 bg-text-main text-background rounded-2xl font-bold text-lg hover:scale-105 hover:shadow-2xl hover:shadow-primary/20 transition-all active:scale-95"
+            >
               Initialize System <ArrowRight size={20} />
-            </Link>
+            </button>
           </div>
         </div>
       </div>
 
-      {/* BENTO GRID FEATURES */}
+      {/* BENTO GRID FEATURES (Unchanged) */}
       <div className="max-w-6xl mx-auto px-6 pb-24 relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           
@@ -94,7 +107,6 @@ const Landing = () => {
                 Integrated task management for coding projects, session timers, and automated GitHub-style contribution graphs to keep you shipping code every day.
               </p>
             </div>
-            {/* Visual Code Decoration */}
             <div className="w-full md:w-1/2 h-32 bg-background border border-border rounded-xl p-4 font-mono text-[10px] md:text-xs text-text-muted opacity-80 select-none shadow-inner">
               <p><span className="text-purple-500">const</span> <span className="text-yellow-500">life</span> = <span className="text-sky-500">new</span> System();</p>
               <p className="pl-4"><span className="text-purple-500">await</span> life.<span className="text-blue-500">optimize</span>(&#123;</p>
