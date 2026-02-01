@@ -134,7 +134,9 @@ const DashboardHeader = () => {
         </div>
 
         <div className="flex items-center gap-2">
-          <ThemeSelector />
+          {/* UPDATED: Pass 'header' variant so it drops DOWN */}
+          <ThemeSelector variant="header" />
+          
           <button className="relative p-2 rounded-xl bg-surface border border-border hover:bg-background transition-all shadow-sm group">
             <Bell size={20} className="text-text-muted group-hover:text-text-main" />
             <span className="absolute top-2 right-2.5 w-2 h-2 bg-red-500 rounded-full border border-surface" />

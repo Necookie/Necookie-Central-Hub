@@ -5,12 +5,12 @@
 @layer base {
   /* ☀️ BASE LIGHT (Default) */
   :root {
-    --background: 248 250 252;
-    --surface: 255 255 255;
+    --background: 248 250 252; /* Slate-50 */
+    --surface: 255 255 255;    /* White */
     --surface-highlight: 241 245 249;
-    --text-main: 15 23 42;
-    --text-muted: 100 116 139;
-    --primary: 14 165 233;     /* Sky Blue */
+    --text-main: 15 23 42;     /* Slate-900 */
+    --text-muted: 100 116 139; /* Slate-500 */
+    --primary: 14 165 233;     /* Sky-500 */
     --border: 226 232 240;
     --card-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05);
   }
@@ -23,18 +23,18 @@
     --text-main: 67 20 7;      /* Espresso */
     --text-muted: 154 52 18;   /* Rust */
     --primary: 217 119 6;      /* Caramel */
-    --border: 253 218 165;     /* Latte Foam */
+    --border: 253 218 165;
     --card-shadow: 0 4px 6px -1px rgba(67, 20, 7, 0.05);
   }
 
   /* 🌙 BASE DARK (Zinc) */
   .dark {
-    --background: 9 9 11;
-    --surface: 24 24 27;
+    --background: 9 9 11;      /* Zinc-950 */
+    --surface: 24 24 27;       /* Zinc-900 */
     --surface-highlight: 39 39 42;
-    --text-main: 244 244 245;
-    --text-muted: 161 161 170;
-    --primary: 56 189 248;
+    --text-main: 244 244 245;  /* Zinc-100 (Light Text) */
+    --text-muted: 161 161 170; /* Zinc-400 */
+    --primary: 56 189 248;     /* Sky-400 */
     --border: 39 39 42;
     --card-shadow: none;
   }
@@ -44,43 +44,43 @@
     --background: 2 6 23;      /* Slate-950 */
     --surface: 15 23 42;       /* Slate-900 */
     --surface-highlight: 30 41 59;
-    --text-main: 241 245 249;
-    --text-muted: 148 163 184;
-    --primary: 99 102 241;     /* Indigo */
+    --text-main: 241 245 249;  /* Slate-100 (Light Text) */
+    --text-muted: 148 163 184; /* Slate-400 */
+    --primary: 99 102 241;     /* Indigo-500 */
     --border: 30 41 59;
   }
 
   /* 🌲 FOREST THEME (Emerald) */
   .dark.theme-forest {
-    --background: 2 44 34;     /* Deep Emerald */
-    --surface: 6 78 59;
+    --background: 2 44 34;     /* Emerald-950 */
+    --surface: 6 78 59;        /* Emerald-900 */
     --surface-highlight: 6 95 70;
-    --text-main: 236 253 245;
-    --text-muted: 110 231 183;
-    --primary: 52 211 153;     /* Mint */
+    --text-main: 236 253 245;  /* Emerald-50 (White-ish) */
+    --text-muted: 110 231 183; /* Emerald-300 */
+    --primary: 52 211 153;     /* Mint-400 */
     --border: 6 95 70;
   }
 
   /* 🚧 ORKEN THEME (Industrial Orange/Grey) */
   .dark.theme-orken {
-    --background: 23 23 23;    /* #171717 (Neutral Dark) */
-    --surface: 53 53 53;       /* #353535 (Orken Grey) */
+    --background: 23 23 23;    /* Neutral-900 */
+    --surface: 38 38 38;       /* Neutral-800 */
     --surface-highlight: 64 64 64;
-    --text-main: 255 255 255;  /* Pure White (High Contrast) */
+    --text-main: 255 255 255;  /* White */
     --text-muted: 163 163 163; /* Neutral-400 */
-    --primary: 255 107 1;      /* #FF6B01 (Safety Orange) */
-    --border: 82 82 82;        /* Neutral-600 (Visible Borders) */
+    --primary: 255 107 1;      /* Safety Orange */
+    --border: 64 64 64;
   }
 
   /* 🧛 GOTH THEME (Vampire Red/Black) */
   .dark.theme-goth {
-    --background: 0 0 0;       /* Pure Void Black */
-    --surface: 10 5 5;         /* Subtle Warm Black */
-    --surface-highlight: 20 5 5;
-    --text-main: 226 232 240;  /* Slate-200 (Cold text) */
-    --text-muted: 113 63 63;   /* Desaturated Red-Grey */
-    --primary: 220 38 38;      /* Red-600 (Blood Crimson) */
-    --border: 69 10 10;        /* Dark Red Border */
+    --background: 0 0 0;       /* Pure Black */
+    --surface: 20 10 10;       /* Very Dark Red/Black */
+    --surface-highlight: 40 15 15;
+    --text-main: 226 232 240;  /* Slate-200 */
+    --text-muted: 160 100 100; /* Desaturated Red */
+    --primary: 220 38 38;      /* Red-600 */
+    --border: 69 10 10;
   }
 }
 
@@ -89,7 +89,18 @@
     @apply bg-surface/70 backdrop-blur-xl border border-border;
   }
   .transition-theme {
-    @apply transition-colors duration-500 ease-out; /* Slower transition for drama */
+    @apply transition-colors duration-500 ease-out;
+  }
+  /* Custom Scrollbar for sleek look */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-border rounded-full hover:bg-text-muted/50 transition-colors;
   }
 }
 
